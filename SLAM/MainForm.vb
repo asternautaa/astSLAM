@@ -1,6 +1,6 @@
 ﻿Imports System.IO
 Imports System.Threading
-Imports SLAM.SourceGame
+Imports SLAM
 Imports System.Management
 
 Public Class MainForm
@@ -11,11 +11,20 @@ Public Class MainForm
     Dim Status As AppStatus = AppStatus.Idle
     Dim TracksToHighlight As New List(Of String)
 
+    Dim MasterTrackList As New List(Of ListViewItem)
+
     Private Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         'If My.Settings.UpdateCheck Then
         '    CheckForUpdate()
         'End If
 
+        If (My.Settings.RememberLastWndPos) Then
+            Me.Location = My.Settings.LastWndPos
+            Me.Size = My.Settings.LastWndSize
+            Me.WindowState = My.Settings.LastWndState
+        End If
+
+        ScanAndFixKeyCollision()
         InitSourceGames()
         InitGameSelector()
         ReloadTracks(CurrentGame) 'CurrentGame here is already set by GameSelector.SelectedIndexChanged event
@@ -183,48 +192,21 @@ Public Class MainForm
         Dim now = Date.Now
         Dim days = DateDiff("d", now, My.Settings.AutoUpdateYTDLLastDateCheck)
         If (days >= 3 Or days < 0) Then
-            My.Settings.AutoUpdateYTDLLastDateCheck = now
-            My.Settings.Save()
-            ViaYoutubedlToolStripMenuItem.Enabled = False
-            YTDLUpdateWorker.RunWorkerAsync()
+            YTDLUpdateWorker_StartNoDateCheck()
         End If
     End Sub
 
-    Private Sub YTDLUpdateWorker_DoDownload(Optional update As Boolean = True)
-        YTDLUpdateWorker.ReportProgress(0, "Downloading youtube-dl...")
-
-        If YoutubeDL.DownloadModule() Then
-            YTDLUpdateWorker.ReportProgress(0, If(update, "youtube-dl updated sucessfully.", "youtube-dl downloaded sucessfully."))
-        Else
-            YTDLUpdateWorker.ReportProgress(0, If(update, "Cannot update youtube-dl.", "Cannot download youtube-dl."))
-        End If
+    Private Sub YTDLUpdateWorker_StartNoDateCheck()
+        My.Settings.AutoUpdateYTDLLastDateCheck = Date.Now
+        My.Settings.Save()
+        ViaYoutubedlToolStripMenuItem.Enabled = False
+        YTDLUpdateWorker.RunWorkerAsync()
     End Sub
 
-    'Yeah, I know youtube-dl has a command line option to update itself, but why not, if I write my own one :)
     Private Sub YTDLUpdateWorker_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles YTDLUpdateWorker.DoWork
         If (YoutubeDL.ModuleExists) Then
-            Dim currVersion As String = ""
-            Dim newVersion As String = ""
-
-            YTDLUpdateWorker.ReportProgress(0, "Checking current version of youtube-dl...")
-
-            If (YoutubeDL.GetVersionString(currVersion)) Then
-                YTDLUpdateWorker.ReportProgress(0, "Checking latest version...of youtube-dl")
-
-                If (YoutubeDL.GetLatestVersionString(newVersion)) Then
-                    If Not (currVersion = newVersion) Then
-                        YTDLUpdateWorker_DoDownload()
-                    Else
-                        YTDLUpdateWorker.ReportProgress(0, "youtube-dl is up-to-date.")
-                    End If
-                Else
-                    YTDLUpdateWorker.ReportProgress(0, "Cannot get latest version of youtube-dl from download homepage.")
-                End If
-            Else
-                YTDLUpdateWorker.ReportProgress(0, "Cannot get version of youtube-dl.")
-            End If
-        Else
-            YTDLUpdateWorker_DoDownload(False)
+            YTDLUpdateWorker.ReportProgress(0, "Updating youtube-dl. This may take a while. Import from that is temporarily disabled.")
+            YoutubeDL.DoUpdate()
         End If
     End Sub
 
@@ -234,6 +216,7 @@ Public Class MainForm
 
     Private Sub YTDLUpdateWorker_RunWorkerCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles YTDLUpdateWorker.RunWorkerCompleted
         ViaYoutubedlToolStripMenuItem.Enabled = True
+        ToolStripStatusLabelAppStatus.Text = "Idle"
     End Sub
 
     Private Sub GameSelector_SelectedIndexChanged(sender As Object, e As EventArgs) Handles GameSelector.SelectedIndexChanged
@@ -260,6 +243,7 @@ Public Class MainForm
         Dim WorkerParams As New WavWorkerParams
         WorkerParams.Game = CurrentGame
         WorkerParams.Files = Files
+        WorkerParams.AddPrefix = My.Settings.AddPrefixToName
 
         WavWorker.RunWorkerAsync(WorkerParams)
         StatusImportShow()
@@ -346,13 +330,26 @@ Public Class MainForm
         If Params.Urls IsNot Nothing Then
             Dim FilteredList As List(Of String) = URLsToList(Params.Urls)
             WavWorker.ReportProgress(WavWorkerProgressCode.Downloading)
+            YoutubeDL.Wait = False
             If (YoutubeDL.DownloadVideos(FilteredList.ToArray(), YoutubeDL.FormatBestAudio, Constants.YTDLOutputTemplate, Params.NoPlaylist)) Then
-                Params.Files = IO.Directory.GetFiles("temp\")
+                While (YoutubeDL.OperationInProgress)
+                    If (WavWorker.CancellationPending) Then
+                        YoutubeDL.StopOperation()
+                        Result.Code = WavWorkerResultCode.Cancelled
+                        Exit While
+                    End If
+                    Thread.Sleep(50)
+                End While
+
+                If Not ((YoutubeDL.ExitCode <> 0 And My.Settings.NoImportYTDLInterrupted) Or (WavWorker.CancellationPending)) Then
+                    Params.Files = IO.Directory.GetFiles("temp\")
+                End If
             Else
                 Params.Files = Nothing
                 Result.Exception = YoutubeDL.LastException
                 Result.Code = WavWorkerResultCode.YTDLFail
             End If
+            YoutubeDL.Wait = True
         End If
 
         TracksToHighlight.Clear()
@@ -363,7 +360,15 @@ Public Class MainForm
                 ShortFilename = Path.GetFileNameWithoutExtension(File)
                 WavWorker.ReportProgress(WavWorkerProgressCode.NextFile, ShortFilename)
                 Try
-                    Dim OutFile As String = Path.Combine(Params.Game.libraryname, ShortFilename & ".wav")
+                    Dim OutName As String = ShortFilename
+                    If (Params.AddPrefix And Params.Urls Is Nothing) Then
+                        Dim DirName = Path.GetDirectoryName(File)
+                        Dim DirInfo As New DirectoryInfo(DirName)
+
+                        OutName = DirInfo.Name & "_" & OutName
+                    End If
+
+                    Dim OutFile As String = Path.Combine(Params.Game.libraryname, OutName & ".wav")
 
                     If My.Settings.UseFFMPEG Then
                         FFMPEG_WaveCreator(File, OutFile, Params.Game)
@@ -405,8 +410,8 @@ Public Class MainForm
     End Sub
     Private Sub WavWorker_RunWorkerCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles WavWorker.RunWorkerCompleted
         Dim Result As WavWorkerResult = e.Result
-
         Dim MsgBoxText As String = ""
+        Dim UseFailedFilesDlg = False
         ToolStripProgressBarImport.Value = 0
         ToolStripStatusLabelImportProgress.Text = "Import progress"
         StatusImportShow(False)
@@ -420,13 +425,24 @@ Public Class MainForm
                 MsgBoxText = "Download failed:" & vbCrLf & Result.Exception.ToString()
         End Select
 
-        If Result.FailedFiles.Count > 0 Then
-            MsgBoxText = MsgBoxText & " However, the following files failed to convert:  " & String.Join(", ", Result.FailedFiles)
+        'If Result.FailedFiles.Count > 0 Then
+        '    UseFailedFilesDlg = True
+        '    'MsgBoxText = MsgBoxText & " However, the following files failed to convert:  " & String.Join(", ", Result.FailedFiles)
+        'End If
+
+        UseFailedFilesDlg = (Result.FailedFiles.Count > 0)
+
+        If (UseFailedFilesDlg) Then
+            Dim dlg As New ConversionFailDlg
+            dlg.Message = MsgBoxText
+            dlg.FailedFiles = String.Join(vbCrLf, Result.FailedFiles)
+            dlg.ShowDialog()
+        Else
+            MessageBox.Show(MsgBoxText, "SLAM", MessageBoxButtons.OK, MessageBoxIcon.Information)
         End If
 
         ReloadTracks(CurrentGame)
         RefreshTrackList()
-        MessageBox.Show(MsgBoxText, "SLAM", MessageBoxButtons.OK, MessageBoxIcon.Information)
         UpdateTracksInGame()
         EnableInterface()
         Misc.DeleteTempFiles()
@@ -452,15 +468,15 @@ Public Class MainForm
             For Each File In System.IO.Directory.GetFiles(Game.libraryname)
 
                 If Game.FileExtension = Path.GetExtension(File) Then
-                    Dim track As New track
+                    Dim track As New SourceGame.track
                     track.name = Path.GetFileNameWithoutExtension(File)
                     Game.tracks.Add(track)
                 End If
             Next
 
             CreateTags(Game)
-            LoadTrackKeys(Game)
-            SaveTrackKeys(Game) 'To prune hotkeys from non-existing tracks
+            LoadTrackSettings(Game)
+            SaveTrackSettings(Game) 'To prune hotkeys from non-existing tracks
         Else
             System.IO.Directory.CreateDirectory(Game.libraryname)
         End If
@@ -474,26 +490,40 @@ Public Class MainForm
 
     Private Sub RefreshTrackList()
         TrackList.Items.Clear()
+        MasterTrackList.Clear()
+        Dim TrackIndex = -1
 
         For Each Track In CurrentGame.tracks
             Dim trimmed As String = If(Track.Trimmed, "Yes", "")
-            Dim lvitem = TrackList.Items.Add(New ListViewItem({"False", Track.name, Track.hotkey, Track.volume & "%", trimmed, """" & String.Join(""", """, Track.tags) & """"}))
+            TrackIndex = CurrentGame.tracks.IndexOf(Track)
+            Dim lvitem = New ListViewItem({Track.name, Track.hotkey, Track.volume & "%", trimmed, """" & String.Join(""", """, Track.tags) & """", "", Track.PlayCounter})
             If My.Settings.HighlightRecentImportedTracks Then
                 Dim index As Integer = TracksToHighlight.IndexOf(Track.name)
                 If index > -1 Then
                     lvitem.BackColor = My.Settings.HighlightBackColor
+                    lvitem.ForeColor = My.Settings.HighlightForeColor
                 End If
             End If
+            Dim TrackTime As TimeSpan = GetWavDuration(Path.Combine(CurrentGame.libraryname, Track.name + ".wav"))
+
+            Dim IntTotalMin As Integer = TrackTime.TotalMinutes
+            lvitem.SubItems(5).Text = String.Format("{0:00}:{1:00}", IntTotalMin, TrackTime.Seconds)
+            lvitem.Tag = TrackIndex
+
+            MasterTrackList.Add(lvitem)
+            TrackList.Items.Add(lvitem)
         Next
 
-        TrackList.AutoResizeColumn(0, ColumnHeaderAutoResizeStyle.HeaderSize)
-        TrackList.AutoResizeColumn(1, ColumnHeaderAutoResizeStyle.ColumnContent)
+        TrackList.AutoResizeColumn(0, ColumnHeaderAutoResizeStyle.ColumnContent)
+        TrackList.AutoResizeColumn(1, ColumnHeaderAutoResizeStyle.HeaderSize)
         TrackList.AutoResizeColumn(2, ColumnHeaderAutoResizeStyle.HeaderSize)
         TrackList.AutoResizeColumn(3, ColumnHeaderAutoResizeStyle.HeaderSize)
-        TrackList.AutoResizeColumn(4, ColumnHeaderAutoResizeStyle.HeaderSize)
-        TrackList.AutoResizeColumn(5, ColumnHeaderAutoResizeStyle.ColumnContent)
+        TrackList.AutoResizeColumn(4, ColumnHeaderAutoResizeStyle.ColumnContent)
+        TrackList.AutoResizeColumn(5, ColumnHeaderAutoResizeStyle.HeaderSize)
+        TrackList.AutoResizeColumn(6, ColumnHeaderAutoResizeStyle.HeaderSize)
 
         UpdateTrackCount()
+        DoSearchIfTextBoxHaveText()
     End Sub
 
     Private Sub StartStopPoll()
@@ -623,6 +653,7 @@ Public Class MainForm
         Dim DoLoadTrack As Boolean = False
         Dim RelayCfg As String = ""
         Dim Rnd As New Random()
+        Dim FirstRemoveRelayFile = True
 
         Do While Not PollRelayWorker.CancellationPending And Not StopWorking
             Try
@@ -631,48 +662,74 @@ Public Class MainForm
                 End If
 
                 If File.Exists(GameCfg) Then
-                    Using reader As StreamReader = New StreamReader(GameCfg)
-                        RelayCfg = reader.ReadToEnd()
-                    End Using
+                    If FirstRemoveRelayFile Then
+                        FirstRemoveRelayFile = False
+                    Else
+                        Using reader As StreamReader = New StreamReader(GameCfg)
+                            RelayCfg = reader.ReadToEnd()
+                        End Using
 
-                    command = Misc.recog(RelayCfg, String.Format("bind ""{0}"" ""(.*?)""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey)))
+                        command = Misc.recog(RelayCfg, String.Format("bind ""{0}"" ""(.*?)""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey)))
 
-                    If Not String.IsNullOrEmpty(command) Then
-                        If command = "slstop" Then
-                            StopWorking = True
-                        ElseIf command = "slquit" Then
-                            StopWorking = True
-                            ClosePending = True
-                        ElseIf command.StartsWith("trx") Then 'set track
-                            value = command.Remove(0, 3)
-                            If IsNumeric(value) Then
-                                NumTrack = Convert.ToInt32(value) - 1
+                        If Not String.IsNullOrEmpty(command) Then
+                            If command.StartsWith("key") Then
+                                value = command.Remove(0, 3)
+                                NumTrack = Misc.FindTrackIndexByHotkey(CurrentGame, value)
+                                If (NumTrack > -1) Then
+                                    DoLoadTrack = True
+                                End If
+                            ElseIf command = "slstop" Then
+                                StopWorking = True
+                            ElseIf command = "slquit" Then
+                                StopWorking = True
+                                ClosePending = True
+                            ElseIf command.StartsWith("trx") Then 'set track
+                                value = command.Remove(0, 3)
+                                If IsNumeric(value) Then
+                                    NumTrack = Convert.ToInt32(value) - 1
+                                    DoLoadTrack = True
+                                End If
+                            ElseIf command = "trr" Then 'random track
+                                NumTrack = Rnd.Next(0, Game.tracks.Count - 1)
                                 DoLoadTrack = True
-                            End If
-                        ElseIf command = "trr" Then 'random track
-                            NumTrack = Rnd.Next(0, Game.tracks.Count - 1)
-                            DoLoadTrack = True
-                        ElseIf command = "trp" Then 'prev track
-                            NumTrack -= 1
-                            If (NumTrack < 0) Then
-                                NumTrack = Game.tracks.Count - 1
-                            End If
-                            DoLoadTrack = True
-                        ElseIf command = "trn" Then 'next track
-                            NumTrack += 1
-                            If (NumTrack >= Game.tracks.Count) Then
+                            ElseIf command = "trp" Then 'prev track
+                                NumTrack = LoadedTrackInfo.Index - 1
+                                If (NumTrack < 0) Then
+                                    NumTrack = Game.tracks.Count - 1
+                                End If
+                                DoLoadTrack = True
+                            ElseIf command = "trn" Then 'next track
+                                NumTrack = LoadedTrackInfo.Index + 1
+                                If (NumTrack >= Game.tracks.Count) Then
+                                    NumTrack = 0
+                                End If
+                                DoLoadTrack = True
+                            ElseIf command = "trf" Then 'first track
                                 NumTrack = 0
+                                DoLoadTrack = True
+                            ElseIf command = "trl" Then 'last track
+                                NumTrack = Game.tracks.Count - 1
+                                DoLoadTrack = True
+                            ElseIf command = "slplaying" Then
+                                If LoadedTrackInfo.Index > -1 Then
+                                    Game.tracks(LoadedTrackInfo.Index).PlayCounter += 1
+                                    SaveTrackSettings(Game)
+                                    PollRelayWorker.ReportProgress(PollRelayWorkerProgressCode.UpdatePlayCounter, {LoadedTrackInfo.Index, Game.tracks(LoadedTrackInfo.Index).PlayCounter})
+                                End If
+                            ElseIf command = "slshow" Then
+                                PollRelayWorker.ReportProgress(PollRelayWorkerProgressCode.ShowSLAMWnd, 0)
+                            ElseIf command = "sl11on" Then
+                                My.Settings.ForceConvertTo11kHz = True
+                                My.Settings.Save()
+                            ElseIf command = "sl11off" Then
+                                My.Settings.ForceConvertTo11kHz = False
+                                My.Settings.Save()
                             End If
-                            DoLoadTrack = True
-                        ElseIf command = "trf" Then 'first track
-                            NumTrack = 0
-                            DoLoadTrack = True
-                        ElseIf command = "trl" Then 'last track
-                            NumTrack = Game.tracks.Count - 1
-                            DoLoadTrack = True
-                        End If
-                    End If 'Not String.IsNullOrEmpty(command)
+                        End If 'Not String.IsNullOrEmpty(command)
+                    End If
                     File.Delete(GameCfg)
+                Else
+                    FirstRemoveRelayFile = False
                 End If 'File.Exists(GameCfg)
 
                 If DoLoadTrack Then
@@ -702,20 +759,8 @@ Public Class MainForm
 
         If Not String.IsNullOrEmpty(SteamAppsPath) Then
             Configs.DeleteCFGs(Game, SteamAppsPath)
-            DeleteVoiceFile(Game, SteamAppsPath)
+            Misc.DeleteVoiceFile(Game, SteamAppsPath)
         End If
-
-    End Sub
-
-    Private Sub DeleteVoiceFile(ByRef Game As SourceGame, ByRef _SteamAppsPath As String)
-        Dim voicefile As String = Path.Combine(_SteamAppsPath, Game.directory) & "voice_input.wav"
-        Try
-            If File.Exists(voicefile) Then
-                File.Delete(voicefile)
-            End If
-        Catch ex As Exception
-            Logger.LogError(ex)
-        End Try
     End Sub
 
     Public Function UserDataCFG(Game As SourceGame, UserdataPath As String, ByRef steamuserdir As String) As String
@@ -772,15 +817,22 @@ Public Class MainForm
                 status = AppStatus.Working
                 ToolStripStatusLabelAppStatus.Text = "Working."
             Case PollRelayWorkerProgressCode.TrackChanged
-                DisplayLoaded(e.UserState)
-                Configs.UpdateLoadedTrackInfo(CurrentGame, SteamAppsPath, e.UserState)
+                Dim no As Integer = e.UserState
+                DisplayLoaded(no)
+                Configs.UpdateLoadedTrackInfo(CurrentGame, SteamAppsPath, no)
+            Case PollRelayWorkerProgressCode.UpdatePlayCounter
+                TrackList.Items(e.UserState(0)).SubItems(6).Text = e.UserState(1)
+            Case PollRelayWorkerProgressCode.ShowSLAMWnd
+                'Me.Show()
+                'Me.WindowState = If(Maximized, FormWindowState.Maximized, FormWindowState.Normal)
+                ShowFromTray()
         End Select
     End Sub
 
     Private Sub PollRelayWorker_RunWorkerCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles PollRelayWorker.RunWorkerCompleted
         SetupInterfaceWorking(False)
         status = AppStatus.Idle
-        ToolStripStatusLabelAppStatus.Text = "Idle."
+        ToolStripStatusLabelAppStatus.Text = "Idle"
         ToolStripStatusLabelLoadedTrackName.Text = "No file"
         RefreshTrackList()
 
@@ -807,11 +859,29 @@ Public Class MainForm
 
     Private Sub DisplayLoaded(ByVal track As Integer)
         For i As Integer = 0 To TrackList.Items.Count - 1
-            TrackList.Items(i).SubItems(0).Text = "False"
+            If (TrackList.Items(i).Tag = track) Then
+                TrackList.Items(i).ImageIndex = 0
+            Else
+                TrackList.Items(i).ImageIndex = -1
+            End If
         Next
-        TrackList.Items(track).SubItems(0).Text = "True"
-
         ToolStripStatusLabelLoadedTrackName.Text = CurrentGame.tracks(track).name
+    End Sub
+
+    Private Sub DisplayLoaded(ByVal name As String)
+        Dim index = -1
+        For i As Integer = 0 To TrackList.Items.Count - 1
+            If (TrackList.Items(i).Text = name) Then
+                TrackList.Items(i).ImageIndex = 0
+                index = TrackList.Items(i).Tag
+            Else
+                TrackList.Items(i).ImageIndex = -1
+            End If
+        Next
+
+        If (index > -1) Then
+            ToolStripStatusLabelLoadedTrackName.Text = CurrentGame.tracks(index).name
+        End If
     End Sub
 
     Private Sub TrackList_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles TrackList.MouseDoubleClick
@@ -830,7 +900,7 @@ Public Class MainForm
         If MessageBox.Show("Are you sure you want to delete selected track(s)?", "Delete Track?", MessageBoxButtons.YesNo) = Windows.Forms.DialogResult.Yes Then
 
             For Each item In TrackList.SelectedItems
-                Dim trackname = item.SubItems(1).Text
+                Dim trackname = item.SubItems(0).Text
                 Dim FilePath As String = Path.Combine(CurrentGame.libraryname, trackname & CurrentGame.FileExtension)
 
                 If File.Exists(FilePath) Then
@@ -846,13 +916,12 @@ Public Class MainForm
             RefreshTrackList()
             UpdateTracksInGame()
         End If
-
     End Sub
 
     Private Sub ContextHotKey_Click(sender As Object, e As EventArgs) Handles ContextHotKey.Click
         Dim SelectKeyDialog As New SelectKey
         If TrackList.SelectedItems.Count = 1 Then
-            Dim SelectedIndex = TrackList.SelectedItems(0).Index
+            Dim SelectedIndex As Integer = TrackList.SelectedItems(0).Tag
             If SelectKeyDialog.ShowDialog = Windows.Forms.DialogResult.OK Then
                 Dim KeyIsFree As Boolean = True
                 If (KeysMisc.CheckKeyIsFreeInSettings(SelectKeyDialog.ChosenKey)) Then
@@ -867,7 +936,7 @@ Public Class MainForm
 
                 If KeyIsFree Then
                     CurrentGame.tracks(SelectedIndex).hotkey = SelectKeyDialog.ChosenKey
-                    SaveTrackKeys(CurrentGame)
+                    SaveTrackSettings(CurrentGame)
                     ReloadTracks(CurrentGame)
                     RefreshTrackList()
                     UpdateTracksInGame()
@@ -875,8 +944,10 @@ Public Class MainForm
                     MessageBox.Show(String.Format("""{0}"" has already been assigned!", SelectKeyDialog.ChosenKey), "Invalid Key")
                 End If
 
-                If CurrentGame.tracks(SelectedIndex).name = RecentLoadedTrackName Then
-                    DisplayLoaded(SelectedIndex)
+                If (Running And Status = AppStatus.Working) Then
+                    If CurrentGame.tracks(SelectedIndex).name = LoadedTrackInfo.Name Then
+                        DisplayLoaded(SelectedIndex)
+                    End If
                 End If
             End If
         End If
@@ -885,14 +956,14 @@ Public Class MainForm
     Private Sub RemoveHotkeyToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles RemoveHotkeyToolStripMenuItem.Click
         Dim NeedToFakeReload = False
         Dim FakeReloadIndex = -1
-        For Each SelectedIndex In TrackList.SelectedItems
-            CurrentGame.tracks(SelectedIndex.index).hotkey = vbNullString
-            SaveTrackKeys(CurrentGame)
+        For Each SelectedItem In TrackList.SelectedItems
+            CurrentGame.tracks(SelectedItem.Tag).hotkey = vbNullString
+            SaveTrackSettings(CurrentGame)
             ReloadTracks(CurrentGame)
 
-            If (CurrentGame.tracks(SelectedIndex.index).name = RecentLoadedTrackName) Then
+            If (CurrentGame.tracks(SelectedItem.Tag).name = LoadedTrackInfo.Name) Then
                 NeedToFakeReload = True
-                FakeReloadIndex = SelectedIndex.index
+                FakeReloadIndex = SelectedItem.Tag
             End If
         Next
 
@@ -904,7 +975,7 @@ Public Class MainForm
     End Sub
 
     Private Sub GoToToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles GoToToolStripMenuItem.Click
-        Dim FilePath As String = Path.Combine(CurrentGame.libraryname, CurrentGame.tracks(TrackList.SelectedItems(0).Index).name & CurrentGame.FileExtension)
+        Dim FilePath As String = Path.Combine(CurrentGame.libraryname, CurrentGame.tracks(TrackList.SelectedItems(0).Tag).name & CurrentGame.FileExtension)
 
         Dim Args As String = String.Format("/Select, ""{0}""", FilePath)
         Dim pfi As New ProcessStartInfo("Explorer.exe", Args)
@@ -918,18 +989,18 @@ Public Class MainForm
         Dim ReloadIndex As Integer = -1
 
         If TrackList.SelectedItems.Count = 1 Then
-            SetVolumeDialog.Volume = CurrentGame.tracks(TrackList.SelectedIndices(0)).volume
+            SetVolumeDialog.Volume = CurrentGame.tracks(TrackList.SelectedItems(0).Tag).volume
         End If
 
         If SetVolumeDialog.ShowDialog = Windows.Forms.DialogResult.OK Then
-            For Each index In TrackList.SelectedIndices
-                CurrentGame.tracks(index).volume = SetVolumeDialog.Volume
-                If CurrentGame.tracks(index).name = RecentLoadedTrackName Then
+            For Each item In TrackList.SelectedItems
+                CurrentGame.tracks(item.tag).volume = SetVolumeDialog.Volume
+                If CurrentGame.tracks(item.tag).name = LoadedTrackInfo.Name Then
                     NeedToReload = True
-                    ReloadIndex = index
+                    ReloadIndex = item.tag
                 End If
             Next
-            SaveTrackKeys(CurrentGame)
+            SaveTrackSettings(CurrentGame)
             ReloadTracks(CurrentGame)
             RefreshTrackList()
         End If
@@ -944,24 +1015,46 @@ Public Class MainForm
         If TrackList.SelectedItems.Count = 1 Then
             If File.Exists(NAudioModuleName) Then
                 Dim TrimDialog As New TrimForm
-                Dim TrackIndex = TrackList.SelectedIndices(0)
+                Dim TrackIndex As Integer = TrackList.SelectedItems(0).Tag
+                Dim Track As SourceGame.track = CurrentGame.tracks(TrackIndex)
 
-                TrimDialog.WavFile = Path.Combine(CurrentGame.libraryname, CurrentGame.tracks(TrackIndex).name & CurrentGame.FileExtension)
-                TrimDialog.startpos = CurrentGame.tracks(TrackIndex).startpos
-                TrimDialog.endpos = CurrentGame.tracks(TrackIndex).endpos
-
+                TrimDialog.WavFile = Path.Combine(CurrentGame.libraryname, Track.name & CurrentGame.FileExtension)
+                TrimDialog.Startpos = Track.startpos
+                TrimDialog.Endpos = Track.endpos
 
                 If TrimDialog.ShowDialog = Windows.Forms.DialogResult.OK Then
-                    CurrentGame.tracks(TrackIndex).startpos = TrimDialog.startpos
-                    CurrentGame.tracks(TrackIndex).endpos = TrimDialog.endpos
-                    SaveTrackKeys(CurrentGame)
+                    If TrimDialog.TrimPermanently Then
+                        Dim MissingFile = ""
+                        If (My.Settings.UseFFMPEG) And (Not NRecoModuleExists) Then
+                            MissingFile = NRecoModuleName
+                        ElseIf (Not My.Settings.UseFFMPEG) And (Not NAudioModuleExists) Then
+                            MissingFile = NAudioModuleName
+                        End If
+
+                        If (MissingFile.Length > 0) Then
+                            MessageBox.Show("Cannot trim permanently, because " & MissingFile & " is missing.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Else
+                            If (Not ConvertTrimTrack(CurrentGame, Track, TrimDialog.Startpos, TrimDialog.Endpos)) Then
+                                MessageBox.Show("Cannot trim permanently, see errorlog.txt for more info.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            Else
+                                MessageBox.Show("Trim permanently done.", "SLAM", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                            End If
+                        End If
+                    Else
+                        Track.startpos = TrimDialog.Startpos
+                        Track.endpos = TrimDialog.Endpos
+                    End If
+
+                    SaveTrackSettings(CurrentGame)
                     ReloadTracks(CurrentGame)
                     RefreshTrackList()
                 End If
 
-                If CurrentGame.tracks(TrackIndex).name = RecentLoadedTrackName And Running And Status = AppStatus.Working Then
-                    ReloadLoadedTrack(CurrentGame, SteamAppsPath)
-                    DisplayLoaded(TrackIndex)
+                If Running And Status = AppStatus.Working Then
+                    If Track.name = LoadedTrackInfo.Name Then
+                        ReloadLoadedTrack(CurrentGame, SteamAppsPath)
+                        DisplayLoaded(TrackIndex)
+                    End If
                 End If
             Else
                 MessageBox.Show("You are missing " & NAudioModuleName & vbCrLf & " Cannot trim without it!", "Missing File", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -971,43 +1064,8 @@ Public Class MainForm
 
     Private Sub RenameToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles RenameToolStripMenuItem.Click
         If (TrackList.SelectedItems.Count = 1) Then
-            Dim SelectedTrack As SourceGame.track = CurrentGame.tracks(TrackList.SelectedIndices(0))
-
-            Dim newName As String = InputBox("New name:  ", "Rename track", SelectedTrack.name)
-
-            If newName.Length > 0 Then
-                If String.Compare(newName, SelectedTrack.name, StringComparison.OrdinalIgnoreCase) <> 0 Then
-                    Try
-                        Dim OldFilePath = Path.Combine(CurrentGame.libraryname, SelectedTrack.name & CurrentGame.FileExtension)
-                        Dim NewFilePath = Path.Combine(CurrentGame.libraryname, newName & CurrentGame.FileExtension)
-                        FileSystem.Rename(OldFilePath, NewFilePath)
-                        CurrentGame.tracks(TrackList.SelectedIndices(0)).name = newName
-
-                        SaveTrackKeys(CurrentGame)
-                        ReloadTracks(CurrentGame)
-                        RefreshTrackList()
-
-                    Catch ex As Exception
-                        Select Case ex.HResult
-                            Case -2147024809
-                                MessageBox.Show("""" & newName & """ contains invalid characters.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-
-                            Case -2146232800
-                                MessageBox.Show("A track with that name already exists.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-
-                            Case -2147024690
-                                MessageBox.Show("New track name is too long.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-
-                            Case Else
-                                MessageBox.Show(ex.Message & " See errorlog.txt for more info.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                        End Select
-
-                    End Try
-                End If
-            End If
+            TrackList.SelectedItems(0).BeginEdit()
         End If
-
-        UpdateTracksInGame()
     End Sub
 
     'Private Async Sub CheckForUpdate()
@@ -1018,7 +1076,7 @@ Public Class MainForm
     '    Try
 
     '        Using client As New HttpClient
-    '            Dim UpdateTextTask As Task(Of String) = client.GetStringAsync("http://slam.flankers.net/updates.php?version=" & NeatVersion)
+    '            Dim UpdateTextTask As Task(Of String) = client.GetStringAsync("http: //slam.flankers.net/updates.php?version=" & NeatVersion)
     '            UpdateText = Await UpdateTextTask
     '        End Using
 
@@ -1051,13 +1109,21 @@ Public Class MainForm
             ClosePending = True
             e.Cancel = True
         End If
+
+        If (My.Settings.RememberLastWndPos) Then
+            My.Settings.LastWndPos = Me.Location
+            My.Settings.LastWndSize = Me.Size
+            My.Settings.LastWndState = Me.WindowState
+            My.Settings.Save()
+        End If
     End Sub
 
     Private Sub LoadToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles LoadToolStripMenuItem.Click
         If (TrackList.SelectedItems.Count = 1) Then
-            LoadTrack(CurrentGame, TrackList.SelectedItems(0).Index, SteamAppsPath)
-            DisplayLoaded(TrackList.SelectedItems(0).Index)
-            Configs.UpdateLoadedTrackInfo(CurrentGame, SteamAppsPath, TrackList.SelectedItems(0).Index)
+            LoadTrack(CurrentGame, TrackList.SelectedItems(0).Tag, SteamAppsPath)
+            Dim i As Integer = TrackList.SelectedItems(0).Tag
+            DisplayLoaded(i)
+            Configs.UpdateLoadedTrackInfo(CurrentGame, SteamAppsPath, i)
         End If
     End Sub
 
@@ -1073,18 +1139,19 @@ Public Class MainForm
         End If
     End Sub
 
-    Private Sub SystemTrayIcon_DoubleClick(sender As Object, e As EventArgs) Handles SystemTrayIcon.DoubleClick
+    Private Sub ShowFromTray()
         Show()
         ShowInTaskbar = True
         WindowState = FormWindowState.Normal
         SystemTrayIcon.Visible = False
     End Sub
 
+    Private Sub SystemTrayIcon_DoubleClick(sender As Object, e As EventArgs) Handles SystemTrayIcon.DoubleClick
+        ShowFromTray()
+    End Sub
+
     Private Sub SystemTrayMenu_OpenHandler(sender As Object, e As EventArgs) Handles SystemTrayMenu_Open.Click
-        Show()
-        ShowInTaskbar = True
-        WindowState = FormWindowState.Normal
-        SystemTrayIcon.Visible = False
+        ShowFromTray()
     End Sub
 
     Private Sub SystemTrayMenu_ExitHandler(sender As Object, e As EventArgs) Handles SystemTrayMenu_Exit.Click
@@ -1105,10 +1172,6 @@ Public Class MainForm
 
             My.Settings.NoHint = HintDlg.DontShowAgain
             My.Settings.Save()
-            '    If MessageBox.Show("Don't forget to type ""exec slam"" in console! Click ""Cancel"" if you don't ever want to see this message again.", "SLAM", MessageBoxButtons.OKCancel) = Windows.Forms.DialogResult.Cancel Then
-            '        My.Settings.NoHint = True
-            '        My.Settings.Save()
-            '    End If
         End If
     End Sub
 
@@ -1171,14 +1234,14 @@ Public Class MainForm
         Dim NeedToReload = False
         Dim ReloadIndex = -1
 
-        For Each index In TrackList.SelectedIndices
-            CurrentGame.tracks(index).volume = 100
-            If CurrentGame.tracks(index).name = RecentLoadedTrackName Then
+        For Each item In TrackList.SelectedItems
+            CurrentGame.tracks(item.tag).volume = 100
+            If CurrentGame.tracks(item.tag).name = LoadedTrackInfo.Name Then
                 NeedToReload = True
-                ReloadIndex = index
+                ReloadIndex = item.tag
             End If
         Next
-        SaveTrackKeys(CurrentGame)
+        SaveTrackSettings(CurrentGame)
         ReloadTracks(CurrentGame)
         RefreshTrackList()
         If NeedToReload And Running And Status = AppStatus.Working Then
@@ -1260,16 +1323,16 @@ Public Class MainForm
     Private Sub ClearTrimToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ClearTrimToolStripMenuItem.Click
         Dim NeedToReload = False
         Dim ReloadIndex = -1
-        For Each i In TrackList.SelectedIndices
-            CurrentGame.tracks(i).startpos = 0
-            CurrentGame.tracks(i).endpos = 0
+        For Each i In TrackList.SelectedItems
+            CurrentGame.tracks(i.tag).startpos = 0
+            CurrentGame.tracks(i.tag).endpos = 0
 
-            If (CurrentGame.tracks(i).name = RecentLoadedTrackName) Then
+            If (CurrentGame.tracks(i.tag).name = LoadedTrackInfo.Name) Then
                 NeedToReload = True
-                ReloadIndex = i
+                ReloadIndex = i.tag
             End If
         Next
-        SaveTrackKeys(CurrentGame)
+        SaveTrackSettings(CurrentGame)
         ReloadTracks(CurrentGame)
         RefreshTrackList()
 
@@ -1322,5 +1385,108 @@ Public Class MainForm
 
     Private Sub SystemTrayMenuStartClick(sender As Object, e As EventArgs) Handles SystemTrayMenuStart.Click
         StartPoll()
+    End Sub
+
+    Private Sub TrackList_AfterLabelEdit(sender As Object, e As LabelEditEventArgs) Handles TrackList.AfterLabelEdit
+        e.CancelEdit = True 'do not let ListView change the item text from textbox
+        Dim SelectedTrackIndex As Integer = TrackList.SelectedItems(0).Tag
+        Dim SelectedTrack As SourceGame.track = CurrentGame.tracks(SelectedTrackIndex)
+        Dim newName As String = e.Label 'InputBox("New name:  ", "Rename track", SelectedTrack.name)
+
+        If newName IsNot Nothing AndAlso newName.Length > 0 Then
+            If String.Compare(newName, SelectedTrack.name, StringComparison.OrdinalIgnoreCase) <> 0 Then
+                Try
+                    Dim OldFilePath = Path.Combine(CurrentGame.libraryname, SelectedTrack.name & CurrentGame.FileExtension)
+                    Dim NewFilePath = Path.Combine(CurrentGame.libraryname, newName & CurrentGame.FileExtension)
+                    FileSystem.Rename(OldFilePath, NewFilePath)
+                    SelectedTrack.name = newName
+
+                    SaveTrackSettings(CurrentGame)
+                    ReloadTracks(CurrentGame)
+                    RefreshTrackList()
+                    UpdateTracksInGame()
+
+                    If (Running And Status = AppStatus.Working) Then
+                        DisplayLoaded(newName)
+                    End If
+                Catch ex As Exception
+                    Select Case ex.HResult
+                        Case -2147024809
+                            MessageBox.Show("""" & newName & """ contains invalid characters.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                        Case -2146232800
+                            MessageBox.Show("A track with that name already exists.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                        Case -2147024690
+                            MessageBox.Show("New track name is too long.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                        Case Else
+                            MessageBox.Show(ex.Message & " See errorlog.txt for more info.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End Select
+
+                End Try
+            End If
+        End If
+    End Sub
+
+    Private Sub GameSelector_MouseUp(sender As Object, e As MouseEventArgs) Handles GameSelector.MouseUp, ToolStripLabel1.MouseUp
+        If (e.Button = MouseButtons.Right) Then
+            Dim ContextPos As Point = Me.PointToScreen(e.Location)
+            GameSelectorContextMenu.Show(ContextPos)
+        End If
+    End Sub
+
+    Private Sub RunSelectedGameToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles RunSelectedGameToolStripMenuItem.Click
+        DoStartSteamGame(CurrentGame)
+    End Sub
+
+    Private Function FindCallback(p As ListViewItem) As Boolean
+        Dim Result As Boolean = False
+        Dim SubItem = p.SubItems(0)
+        Dim i = SubItem.Text.IndexOf(SearchTextBox.Text, StringComparison.OrdinalIgnoreCase)
+        If (i > -1) Then
+            Result = True
+        End If
+        Return Result
+    End Function
+
+    Private Sub DoSearchIfTextBoxHaveText()
+        TrackList.Items.Clear()
+        If (SearchTextBox.TextLength > 0) Then
+            Dim FoundItems As New List(Of ListViewItem)
+
+            FoundItems = MasterTrackList.FindAll(AddressOf FindCallback)
+
+            Dim Files = Directory.EnumerateFiles(CurrentGame.libraryname, SearchTextBox.Text + ".wav", SearchOption.TopDirectoryOnly)
+            If (Files.Count() > 0) Then
+                For Each File In Files
+                    Dim ShortName = Path.GetFileNameWithoutExtension(File)
+                    For Each item In MasterTrackList
+                        If (item.Text = ShortName) Then
+                            'Insert only if not exists in found list
+                            Dim i = FoundItems.FindIndex(Function(p As ListViewItem)
+                                                             Return (p.Text = ShortName)
+                                                         End Function)
+
+                            If (i = -1) Then
+                                FoundItems.Add(item)
+                            End If
+                        End If
+                    Next
+                Next
+            End If
+
+            TrackList.Items.AddRange(FoundItems.ToArray())
+        Else
+            TrackList.Items.AddRange(MasterTrackList.ToArray())
+        End If
+    End Sub
+
+    Private Sub SearchTextBox_TextChanged(sender As Object, e As EventArgs) Handles SearchTextBox.TextChanged
+        DoSearchIfTextBoxHaveText()
+    End Sub
+
+    Private Sub YoutubedlUpdateToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles YoutubedlUpdateToolStripMenuItem.Click
+        YTDLUpdateWorker_StartNoDateCheck()
     End Sub
 End Class

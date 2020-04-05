@@ -23,14 +23,17 @@ Partial Class MainForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
+        Dim ListViewItem1 As System.Windows.Forms.ListViewItem = New System.Windows.Forms.ListViewItem("TEST")
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MainForm))
         Me.TrackList = New System.Windows.Forms.ListView()
-        Me.LoadedCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.TrackCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.HotKeyCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.VolumeCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.Trimmed = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.TagsCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
+        Me.DurationCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
+        Me.PlayCounterCol = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
+        Me.ImageListTracks = New System.Windows.Forms.ImageList(Me.components)
         Me.ImportDialog = New System.Windows.Forms.OpenFileDialog()
         Me.WavWorker = New System.ComponentModel.BackgroundWorker()
         Me.PollRelayWorker = New System.ComponentModel.BackgroundWorker()
@@ -76,6 +79,8 @@ Partial Class MainForm
         Me.ToolStripButtonStartWork = New System.Windows.Forms.ToolStripButton()
         Me.ToolStripButtonStopWork = New System.Windows.Forms.ToolStripButton()
         Me.ToolStripButtonSettings = New System.Windows.Forms.ToolStripButton()
+        Me.ToolStripDropDownTools = New System.Windows.Forms.ToolStripDropDownButton()
+        Me.YoutubedlUpdateToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripDropDownButton1 = New System.Windows.Forms.ToolStripDropDownButton()
         Me.ShortcutsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.IngameCommandsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -84,11 +89,16 @@ Partial Class MainForm
         Me.YoutubedlCheckVersionToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripMenuItem1 = New System.Windows.Forms.ToolStripSeparator()
         Me.AboutToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToolStripSeparator4 = New System.Windows.Forms.ToolStripSeparator()
+        Me.SearchTextBox = New System.Windows.Forms.ToolStripTextBox()
         Me.YTDLUpdateWorker = New System.ComponentModel.BackgroundWorker()
+        Me.GameSelectorContextMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.RunSelectedGameToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.TrackContextMenu.SuspendLayout()
         Me.SystemTrayMenu.SuspendLayout()
         Me.StatusStrip1.SuspendLayout()
         Me.ToolStrip1.SuspendLayout()
+        Me.GameSelectorContextMenu.SuspendLayout()
         Me.SuspendLayout()
         '
         'TrackList
@@ -98,44 +108,65 @@ Partial Class MainForm
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TrackList.AutoArrange = False
-        Me.TrackList.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.LoadedCol, Me.TrackCol, Me.HotKeyCol, Me.VolumeCol, Me.Trimmed, Me.TagsCol})
+        Me.TrackList.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.TrackCol, Me.HotKeyCol, Me.VolumeCol, Me.Trimmed, Me.TagsCol, Me.DurationCol, Me.PlayCounterCol})
         Me.TrackList.FullRowSelect = True
         Me.TrackList.HideSelection = False
         Me.TrackList.ImeMode = System.Windows.Forms.ImeMode.Off
+        ListViewItem1.StateImageIndex = 0
+        Me.TrackList.Items.AddRange(New System.Windows.Forms.ListViewItem() {ListViewItem1})
+        Me.TrackList.LabelEdit = True
         Me.TrackList.Location = New System.Drawing.Point(10, 41)
         Me.TrackList.Margin = New System.Windows.Forms.Padding(1)
         Me.TrackList.Name = "TrackList"
-        Me.TrackList.Size = New System.Drawing.Size(564, 396)
+        Me.TrackList.Size = New System.Drawing.Size(584, 396)
+        Me.TrackList.SmallImageList = Me.ImageListTracks
         Me.TrackList.TabIndex = 4
         Me.TrackList.UseCompatibleStateImageBehavior = False
         Me.TrackList.View = System.Windows.Forms.View.Details
         '
-        'LoadedCol
-        '
-        Me.LoadedCol.Text = "Loaded"
-        '
         'TrackCol
         '
-        Me.TrackCol.Text = "Track"
+        Me.TrackCol.Text = "Track name"
         Me.TrackCol.Width = 137
         '
         'HotKeyCol
         '
+        Me.HotKeyCol.DisplayIndex = 2
         Me.HotKeyCol.Text = "Bind"
         '
         'VolumeCol
         '
+        Me.VolumeCol.DisplayIndex = 3
         Me.VolumeCol.Text = "Volume"
         Me.VolumeCol.Width = 100
         '
         'Trimmed
         '
+        Me.Trimmed.DisplayIndex = 4
         Me.Trimmed.Text = "Trimmed"
         '
         'TagsCol
         '
+        Me.TagsCol.DisplayIndex = 6
         Me.TagsCol.Text = "Tags"
         Me.TagsCol.Width = 43
+        '
+        'DurationCol
+        '
+        Me.DurationCol.DisplayIndex = 1
+        Me.DurationCol.Text = "Duration"
+        '
+        'PlayCounterCol
+        '
+        Me.PlayCounterCol.DisplayIndex = 5
+        Me.PlayCounterCol.Text = "Played times"
+        Me.PlayCounterCol.Width = 71
+        '
+        'ImageListTracks
+        '
+        Me.ImageListTracks.ImageStream = CType(resources.GetObject("ImageListTracks.ImageStream"), System.Windows.Forms.ImageListStreamer)
+        Me.ImageListTracks.TransparentColor = System.Drawing.Color.Transparent
+        Me.ImageListTracks.Images.SetKeyName(0, "note-16.ico")
         '
         'ImportDialog
         '
@@ -299,7 +330,7 @@ Partial Class MainForm
         Me.StatusStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripStatusLabelCount, Me.ToolStripStatusLabelTrackCount, Me.ToolStripStatusLabelSeparator1, Me.ToolStripStatusLabelStatus, Me.ToolStripStatusLabelAppStatus, Me.ToolStripStatusLabelSeparator2, Me.ToolStripStatusLabelLoaded, Me.ToolStripStatusLabelLoadedTrackName, Me.ToolStripStatusLabelSeparator3, Me.ToolStripStatusLabelImportProgress, Me.ToolStripProgressBarImport, Me.ToolStripStatusLabelStopImport})
         Me.StatusStrip1.Location = New System.Drawing.Point(0, 439)
         Me.StatusStrip1.Name = "StatusStrip1"
-        Me.StatusStrip1.Size = New System.Drawing.Size(584, 22)
+        Me.StatusStrip1.Size = New System.Drawing.Size(604, 22)
         Me.StatusStrip1.TabIndex = 11
         Me.StatusStrip1.Text = "StatusStrip1"
         '
@@ -348,7 +379,7 @@ Partial Class MainForm
         'ToolStripStatusLabelLoadedTrackName
         '
         Me.ToolStripStatusLabelLoadedTrackName.Name = "ToolStripStatusLabelLoadedTrackName"
-        Me.ToolStripStatusLabelLoadedTrackName.Size = New System.Drawing.Size(376, 17)
+        Me.ToolStripStatusLabelLoadedTrackName.Size = New System.Drawing.Size(396, 17)
         Me.ToolStripStatusLabelLoadedTrackName.Spring = True
         Me.ToolStripStatusLabelLoadedTrackName.Text = "No file"
         Me.ToolStripStatusLabelLoadedTrackName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -363,7 +394,7 @@ Partial Class MainForm
         'ToolStripStatusLabelImportProgress
         '
         Me.ToolStripStatusLabelImportProgress.Name = "ToolStripStatusLabelImportProgress"
-        Me.ToolStripStatusLabelImportProgress.Size = New System.Drawing.Size(102, 17)
+        Me.ToolStripStatusLabelImportProgress.Size = New System.Drawing.Size(133, 17)
         Me.ToolStripStatusLabelImportProgress.Spring = True
         Me.ToolStripStatusLabelImportProgress.Text = "Import progress"
         Me.ToolStripStatusLabelImportProgress.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -387,11 +418,11 @@ Partial Class MainForm
         'ToolStrip1
         '
         Me.ToolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden
-        Me.ToolStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripLabel1, Me.GameSelector, Me.ToolStripSeparator2, Me.ToolStripSplitButtonImport, Me.ToolStripButtonStartWork, Me.ToolStripButtonStopWork, Me.ToolStripButtonSettings, Me.ToolStripDropDownButton1})
+        Me.ToolStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripLabel1, Me.GameSelector, Me.ToolStripSeparator2, Me.ToolStripSplitButtonImport, Me.ToolStripButtonStartWork, Me.ToolStripButtonStopWork, Me.ToolStripButtonSettings, Me.ToolStripDropDownTools, Me.ToolStripDropDownButton1, Me.ToolStripSeparator4, Me.SearchTextBox})
         Me.ToolStrip1.Location = New System.Drawing.Point(0, 0)
         Me.ToolStrip1.Name = "ToolStrip1"
         Me.ToolStrip1.Padding = New System.Windows.Forms.Padding(7, 0, 0, 0)
-        Me.ToolStrip1.Size = New System.Drawing.Size(584, 38)
+        Me.ToolStrip1.Size = New System.Drawing.Size(604, 38)
         Me.ToolStrip1.TabIndex = 14
         Me.ToolStrip1.Text = "ToolStrip1"
         '
@@ -458,6 +489,23 @@ Partial Class MainForm
         Me.ToolStripButtonSettings.Text = "Settings"
         Me.ToolStripButtonSettings.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         '
+        'ToolStripDropDownTools
+        '
+        Me.ToolStripDropDownTools.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
+        Me.ToolStripDropDownTools.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.YoutubedlUpdateToolStripMenuItem})
+        Me.ToolStripDropDownTools.Image = CType(resources.GetObject("ToolStripDropDownTools.Image"), System.Drawing.Image)
+        Me.ToolStripDropDownTools.ImageTransparentColor = System.Drawing.Color.Magenta
+        Me.ToolStripDropDownTools.Name = "ToolStripDropDownTools"
+        Me.ToolStripDropDownTools.ShowDropDownArrow = False
+        Me.ToolStripDropDownTools.Size = New System.Drawing.Size(38, 35)
+        Me.ToolStripDropDownTools.Text = "Tools"
+        '
+        'YoutubedlUpdateToolStripMenuItem
+        '
+        Me.YoutubedlUpdateToolStripMenuItem.Name = "YoutubedlUpdateToolStripMenuItem"
+        Me.YoutubedlUpdateToolStripMenuItem.Size = New System.Drawing.Size(173, 22)
+        Me.YoutubedlUpdateToolStripMenuItem.Text = "youtube-dl update"
+        '
         'ToolStripDropDownButton1
         '
         Me.ToolStripDropDownButton1.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ShortcutsToolStripMenuItem, Me.IngameCommandsToolStripMenuItem, Me.ToolStripSeparator3, Me.YoutubedlHomepageToolStripMenuItem, Me.YoutubedlCheckVersionToolStripMenuItem, Me.ToolStripMenuItem1, Me.AboutToolStripMenuItem})
@@ -510,21 +558,45 @@ Partial Class MainForm
         Me.AboutToolStripMenuItem.Size = New System.Drawing.Size(208, 22)
         Me.AboutToolStripMenuItem.Text = "About"
         '
+        'ToolStripSeparator4
+        '
+        Me.ToolStripSeparator4.Name = "ToolStripSeparator4"
+        Me.ToolStripSeparator4.Size = New System.Drawing.Size(6, 38)
+        '
+        'SearchTextBox
+        '
+        Me.SearchTextBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
+        Me.SearchTextBox.Name = "SearchTextBox"
+        Me.SearchTextBox.Size = New System.Drawing.Size(100, 38)
+        Me.SearchTextBox.ToolTipText = "Search..."
+        '
         'YTDLUpdateWorker
         '
         Me.YTDLUpdateWorker.WorkerReportsProgress = True
+        '
+        'GameSelectorContextMenu
+        '
+        Me.GameSelectorContextMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.RunSelectedGameToolStripMenuItem})
+        Me.GameSelectorContextMenu.Name = "GameSelectorContextMenu"
+        Me.GameSelectorContextMenu.Size = New System.Drawing.Size(175, 26)
+        '
+        'RunSelectedGameToolStripMenuItem
+        '
+        Me.RunSelectedGameToolStripMenuItem.Name = "RunSelectedGameToolStripMenuItem"
+        Me.RunSelectedGameToolStripMenuItem.Size = New System.Drawing.Size(174, 22)
+        Me.RunSelectedGameToolStripMenuItem.Text = "Run selected game"
         '
         'MainForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(584, 461)
+        Me.ClientSize = New System.Drawing.Size(604, 461)
         Me.Controls.Add(Me.ToolStrip1)
         Me.Controls.Add(Me.StatusStrip1)
         Me.Controls.Add(Me.TrackList)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.KeyPreview = True
-        Me.MinimumSize = New System.Drawing.Size(600, 500)
+        Me.MinimumSize = New System.Drawing.Size(620, 500)
         Me.Name = "MainForm"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Source Live Audio Mixer (asternauta mod)"
@@ -534,12 +606,12 @@ Partial Class MainForm
         Me.StatusStrip1.PerformLayout()
         Me.ToolStrip1.ResumeLayout(False)
         Me.ToolStrip1.PerformLayout()
+        Me.GameSelectorContextMenu.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
     End Sub
     Friend WithEvents TrackList As System.Windows.Forms.ListView
-    Friend WithEvents LoadedCol As System.Windows.Forms.ColumnHeader
     Friend WithEvents TrackCol As System.Windows.Forms.ColumnHeader
     Friend WithEvents TagsCol As System.Windows.Forms.ColumnHeader
     Friend WithEvents ImportDialog As System.Windows.Forms.OpenFileDialog
@@ -588,8 +660,6 @@ Partial Class MainForm
     Friend WithEvents ShortcutsToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents IngameCommandsToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ToolStripSeparator3 As ToolStripSeparator
-    Friend WithEvents YoutubedlHomepageToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents YoutubedlCheckVersionToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ToolStripMenuItem1 As ToolStripSeparator
     Friend WithEvents AboutToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ClearTrimToolStripMenuItem As ToolStripMenuItem
@@ -599,4 +669,15 @@ Partial Class MainForm
     Friend WithEvents ToolStripProgressBarImport As ToolStripProgressBar
     Friend WithEvents ToolStripStatusLabelStopImport As ToolStripStatusLabel
     Friend WithEvents SystemTrayMenuStop As ToolStripMenuItem
+    Friend WithEvents ImageListTracks As ImageList
+    Friend WithEvents DurationCol As ColumnHeader
+    Friend WithEvents GameSelectorContextMenu As ContextMenuStrip
+    Friend WithEvents RunSelectedGameToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents PlayCounterCol As ColumnHeader
+    Friend WithEvents ToolStripSeparator4 As ToolStripSeparator
+    Friend WithEvents SearchTextBox As ToolStripTextBox
+    Friend WithEvents ToolStripDropDownTools As ToolStripDropDownButton
+    Friend WithEvents YoutubedlUpdateToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents YoutubedlHomepageToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents YoutubedlCheckVersionToolStripMenuItem As ToolStripMenuItem
 End Class

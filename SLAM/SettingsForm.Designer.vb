@@ -30,6 +30,7 @@ Partial Class SettingsForm
         Dim ListViewItem5 As System.Windows.Forms.ListViewItem = New System.Windows.Forms.ListViewItem(New String() {"Next track", ""}, -1)
         Dim ListViewItem6 As System.Windows.Forms.ListViewItem = New System.Windows.Forms.ListViewItem(New String() {"First track", ""}, -1)
         Dim ListViewItem7 As System.Windows.Forms.ListViewItem = New System.Windows.Forms.ListViewItem(New String() {"Last track", ""}, -1)
+        Dim ListViewItem8 As System.Windows.Forms.ListViewItem = New System.Windows.Forms.ListViewItem(New String() {"Show SLAM window", ""}, -1)
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(SettingsForm))
         Me.GroupBoxModule = New System.Windows.Forms.GroupBox()
         Me.FFMPEGRadio = New System.Windows.Forms.RadioButton()
@@ -44,19 +45,22 @@ Partial Class SettingsForm
         Me.EnableOverrideBox = New System.Windows.Forms.CheckBox()
         Me.GroupBox2 = New System.Windows.Forms.GroupBox()
         Me.TableLayoutPanel3 = New System.Windows.Forms.TableLayoutPanel()
-        Me.ButtonResetSettings = New System.Windows.Forms.Button()
         Me.HintCheckBox = New System.Windows.Forms.CheckBox()
         Me.LogCheckBox = New System.Windows.Forms.CheckBox()
         Me.StartEnabledCheckBox = New System.Windows.Forms.CheckBox()
-        Me.StartMinimizedCheckBox = New System.Windows.Forms.CheckBox()
         Me.MinimizeToSysTrayCheckBox = New System.Windows.Forms.CheckBox()
         Me.HoldToPlay = New System.Windows.Forms.CheckBox()
         Me.ConTagsCheckBox = New System.Windows.Forms.CheckBox()
-        Me.CheckBoxHighlightRecentImportedTracks = New System.Windows.Forms.CheckBox()
-        Me.CheckBoxAutoUpdateYTDL = New System.Windows.Forms.CheckBox()
-        Me.ButtonChangeHighlightColor = New System.Windows.Forms.Button()
         Me.CheckBoxStopWorkingIfGameClosed = New System.Windows.Forms.CheckBox()
         Me.CheckBoxForceConvertTo11kHz = New System.Windows.Forms.CheckBox()
+        Me.CheckBoxRememberLastWndState = New System.Windows.Forms.CheckBox()
+        Me.CheckBoxAutoUpdateYTDL = New System.Windows.Forms.CheckBox()
+        Me.StartMinimizedCheckBox = New System.Windows.Forms.CheckBox()
+        Me.CheckBoxAddPrefixToName = New System.Windows.Forms.CheckBox()
+        Me.CheckBoxNoImportIfYTDLInterrupt = New System.Windows.Forms.CheckBox()
+        Me.ButtonResetSettings = New System.Windows.Forms.Button()
+        Me.CheckBoxHighlightRecentImportedTracks = New System.Windows.Forms.CheckBox()
+        Me.ButtonChangeHighlightBackColor = New System.Windows.Forms.Button()
         Me.TabControl = New System.Windows.Forms.TabControl()
         Me.TabPageHotKeys = New System.Windows.Forms.TabPage()
         Me.Label3 = New System.Windows.Forms.Label()
@@ -66,6 +70,8 @@ Partial Class SettingsForm
         Me.ColumnHeader1 = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.ColumnHeader2 = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.TabPageOther = New System.Windows.Forms.TabPage()
+        Me.GroupBoxHighlight = New System.Windows.Forms.GroupBox()
+        Me.ButtonChangeHighlightForeColor = New System.Windows.Forms.Button()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
         Me.RadioButtonNoPlaylistNo = New System.Windows.Forms.RadioButton()
         Me.RadioButtonNoPlaylistYes = New System.Windows.Forms.RadioButton()
@@ -77,6 +83,7 @@ Partial Class SettingsForm
         Me.TabControl.SuspendLayout()
         Me.TabPageHotKeys.SuspendLayout()
         Me.TabPageOther.SuspendLayout()
+        Me.GroupBoxHighlight.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -88,10 +95,10 @@ Partial Class SettingsForm
         Me.GroupBoxModule.Controls.Add(Me.NAudioRadio)
         Me.GroupBoxModule.Location = New System.Drawing.Point(6, 108)
         Me.GroupBoxModule.Name = "GroupBoxModule"
-        Me.GroupBoxModule.Size = New System.Drawing.Size(358, 46)
+        Me.GroupBoxModule.Size = New System.Drawing.Size(344, 46)
         Me.GroupBoxModule.TabIndex = 6
         Me.GroupBoxModule.TabStop = False
-        Me.GroupBoxModule.Text = "Module used to import/load tracks"
+        Me.GroupBoxModule.Text = "Module used to import/load/trim tracks"
         '
         'FFMPEGRadio
         '
@@ -127,7 +134,7 @@ Partial Class SettingsForm
         Me.OverrideGroup.Controls.Add(Me.EnableOverrideBox)
         Me.OverrideGroup.Location = New System.Drawing.Point(6, 6)
         Me.OverrideGroup.Name = "OverrideGroup"
-        Me.OverrideGroup.Size = New System.Drawing.Size(358, 96)
+        Me.OverrideGroup.Size = New System.Drawing.Size(344, 96)
         Me.OverrideGroup.TabIndex = 3
         Me.OverrideGroup.TabStop = False
         Me.OverrideGroup.Text = "Override folder detection"
@@ -146,7 +153,7 @@ Partial Class SettingsForm
         '
         Me.FinduserdataButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.FinduserdataButton.Enabled = False
-        Me.FinduserdataButton.Location = New System.Drawing.Point(328, 66)
+        Me.FinduserdataButton.Location = New System.Drawing.Point(311, 66)
         Me.FinduserdataButton.Name = "FinduserdataButton"
         Me.FinduserdataButton.Size = New System.Drawing.Size(24, 23)
         Me.FinduserdataButton.TabIndex = 5
@@ -161,7 +168,7 @@ Partial Class SettingsForm
         Me.userdatatext.Location = New System.Drawing.Point(73, 68)
         Me.userdatatext.Name = "userdatatext"
         Me.userdatatext.ReadOnly = True
-        Me.userdatatext.Size = New System.Drawing.Size(249, 20)
+        Me.userdatatext.Size = New System.Drawing.Size(235, 20)
         Me.userdatatext.TabIndex = 4
         '
         'Label1
@@ -178,7 +185,7 @@ Partial Class SettingsForm
         '
         Me.FindsteamappsButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.FindsteamappsButton.Enabled = False
-        Me.FindsteamappsButton.Location = New System.Drawing.Point(328, 40)
+        Me.FindsteamappsButton.Location = New System.Drawing.Point(314, 40)
         Me.FindsteamappsButton.Name = "FindsteamappsButton"
         Me.FindsteamappsButton.Size = New System.Drawing.Size(24, 23)
         Me.FindsteamappsButton.TabIndex = 2
@@ -193,7 +200,7 @@ Partial Class SettingsForm
         Me.steamappstext.Location = New System.Drawing.Point(73, 42)
         Me.steamappstext.Name = "steamappstext"
         Me.steamappstext.ReadOnly = True
-        Me.steamappstext.Size = New System.Drawing.Size(249, 20)
+        Me.steamappstext.Size = New System.Drawing.Size(235, 20)
         Me.steamappstext.TabIndex = 1
         '
         'EnableOverrideBox
@@ -212,9 +219,9 @@ Partial Class SettingsForm
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.GroupBox2.Controls.Add(Me.TableLayoutPanel3)
-        Me.GroupBox2.Location = New System.Drawing.Point(6, 206)
+        Me.GroupBox2.Location = New System.Drawing.Point(6, 272)
         Me.GroupBox2.Name = "GroupBox2"
-        Me.GroupBox2.Size = New System.Drawing.Size(358, 179)
+        Me.GroupBox2.Size = New System.Drawing.Size(344, 172)
         Me.GroupBox2.TabIndex = 3
         Me.GroupBox2.TabStop = False
         Me.GroupBox2.Text = "Other"
@@ -224,23 +231,23 @@ Partial Class SettingsForm
         Me.TableLayoutPanel3.AutoScroll = True
         Me.TableLayoutPanel3.ColumnCount = 1
         Me.TableLayoutPanel3.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        Me.TableLayoutPanel3.Controls.Add(Me.ButtonResetSettings, 0, 14)
         Me.TableLayoutPanel3.Controls.Add(Me.HintCheckBox, 0, 0)
         Me.TableLayoutPanel3.Controls.Add(Me.LogCheckBox, 0, 1)
         Me.TableLayoutPanel3.Controls.Add(Me.StartEnabledCheckBox, 0, 2)
-        Me.TableLayoutPanel3.Controls.Add(Me.StartMinimizedCheckBox, 0, 6)
         Me.TableLayoutPanel3.Controls.Add(Me.MinimizeToSysTrayCheckBox, 0, 5)
         Me.TableLayoutPanel3.Controls.Add(Me.HoldToPlay, 0, 4)
         Me.TableLayoutPanel3.Controls.Add(Me.ConTagsCheckBox, 0, 3)
-        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxHighlightRecentImportedTracks, 0, 7)
-        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxAutoUpdateYTDL, 0, 9)
-        Me.TableLayoutPanel3.Controls.Add(Me.ButtonChangeHighlightColor, 0, 8)
-        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxStopWorkingIfGameClosed, 0, 12)
-        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxForceConvertTo11kHz, 0, 13)
+        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxStopWorkingIfGameClosed, 0, 8)
+        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxForceConvertTo11kHz, 0, 9)
+        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxRememberLastWndState, 0, 6)
+        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxAutoUpdateYTDL, 0, 10)
+        Me.TableLayoutPanel3.Controls.Add(Me.StartMinimizedCheckBox, 0, 7)
+        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxAddPrefixToName, 0, 11)
+        Me.TableLayoutPanel3.Controls.Add(Me.CheckBoxNoImportIfYTDLInterrupt, 0, 12)
         Me.TableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel3.Location = New System.Drawing.Point(3, 16)
         Me.TableLayoutPanel3.Name = "TableLayoutPanel3"
-        Me.TableLayoutPanel3.RowCount = 15
+        Me.TableLayoutPanel3.RowCount = 14
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
@@ -254,20 +261,9 @@ Partial Class SettingsForm
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.TableLayoutPanel3.Size = New System.Drawing.Size(352, 160)
+        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
+        Me.TableLayoutPanel3.Size = New System.Drawing.Size(338, 153)
         Me.TableLayoutPanel3.TabIndex = 7
-        '
-        'ButtonResetSettings
-        '
-        Me.ButtonResetSettings.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(238, Byte))
-        Me.ButtonResetSettings.Location = New System.Drawing.Point(3, 285)
-        Me.ButtonResetSettings.Name = "ButtonResetSettings"
-        Me.ButtonResetSettings.Size = New System.Drawing.Size(321, 23)
-        Me.ButtonResetSettings.TabIndex = 8
-        Me.ButtonResetSettings.Text = "Reset all settings"
-        Me.ButtonResetSettings.UseVisualStyleBackColor = True
         '
         'HintCheckBox
         '
@@ -299,16 +295,6 @@ Partial Class SettingsForm
         Me.StartEnabledCheckBox.Text = "Start enabled"
         Me.StartEnabledCheckBox.UseVisualStyleBackColor = True
         '
-        'StartMinimizedCheckBox
-        '
-        Me.StartMinimizedCheckBox.AutoSize = True
-        Me.StartMinimizedCheckBox.Location = New System.Drawing.Point(3, 141)
-        Me.StartMinimizedCheckBox.Name = "StartMinimizedCheckBox"
-        Me.StartMinimizedCheckBox.Size = New System.Drawing.Size(96, 17)
-        Me.StartMinimizedCheckBox.TabIndex = 13
-        Me.StartMinimizedCheckBox.Text = "Start minimized"
-        Me.StartMinimizedCheckBox.UseVisualStyleBackColor = True
-        '
         'MinimizeToSysTrayCheckBox
         '
         Me.MinimizeToSysTrayCheckBox.AutoSize = True
@@ -339,40 +325,10 @@ Partial Class SettingsForm
         Me.ConTagsCheckBox.Text = "Tags in console"
         Me.ConTagsCheckBox.UseVisualStyleBackColor = True
         '
-        'CheckBoxHighlightRecentImportedTracks
-        '
-        Me.CheckBoxHighlightRecentImportedTracks.AutoSize = True
-        Me.CheckBoxHighlightRecentImportedTracks.Location = New System.Drawing.Point(3, 164)
-        Me.CheckBoxHighlightRecentImportedTracks.Name = "CheckBoxHighlightRecentImportedTracks"
-        Me.CheckBoxHighlightRecentImportedTracks.Size = New System.Drawing.Size(182, 17)
-        Me.CheckBoxHighlightRecentImportedTracks.TabIndex = 20
-        Me.CheckBoxHighlightRecentImportedTracks.Text = "Highlight recently imported tracks"
-        Me.CheckBoxHighlightRecentImportedTracks.UseVisualStyleBackColor = True
-        '
-        'CheckBoxAutoUpdateYTDL
-        '
-        Me.CheckBoxAutoUpdateYTDL.AutoSize = True
-        Me.CheckBoxAutoUpdateYTDL.Location = New System.Drawing.Point(3, 216)
-        Me.CheckBoxAutoUpdateYTDL.Name = "CheckBoxAutoUpdateYTDL"
-        Me.CheckBoxAutoUpdateYTDL.Size = New System.Drawing.Size(246, 17)
-        Me.CheckBoxAutoUpdateYTDL.TabIndex = 19
-        Me.CheckBoxAutoUpdateYTDL.Text = "Update youtube-dl automatically (every 3 days)"
-        Me.CheckBoxAutoUpdateYTDL.UseVisualStyleBackColor = True
-        '
-        'ButtonChangeHighlightColor
-        '
-        Me.ButtonChangeHighlightColor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.ButtonChangeHighlightColor.Location = New System.Drawing.Point(3, 187)
-        Me.ButtonChangeHighlightColor.Name = "ButtonChangeHighlightColor"
-        Me.ButtonChangeHighlightColor.Size = New System.Drawing.Size(133, 23)
-        Me.ButtonChangeHighlightColor.TabIndex = 25
-        Me.ButtonChangeHighlightColor.Text = "Change highlight color"
-        Me.ButtonChangeHighlightColor.UseVisualStyleBackColor = True
-        '
         'CheckBoxStopWorkingIfGameClosed
         '
         Me.CheckBoxStopWorkingIfGameClosed.AutoSize = True
-        Me.CheckBoxStopWorkingIfGameClosed.Location = New System.Drawing.Point(3, 239)
+        Me.CheckBoxStopWorkingIfGameClosed.Location = New System.Drawing.Point(3, 187)
         Me.CheckBoxStopWorkingIfGameClosed.Name = "CheckBoxStopWorkingIfGameClosed"
         Me.CheckBoxStopWorkingIfGameClosed.Size = New System.Drawing.Size(206, 17)
         Me.CheckBoxStopWorkingIfGameClosed.TabIndex = 22
@@ -382,12 +338,94 @@ Partial Class SettingsForm
         'CheckBoxForceConvertTo11kHz
         '
         Me.CheckBoxForceConvertTo11kHz.AutoSize = True
-        Me.CheckBoxForceConvertTo11kHz.Location = New System.Drawing.Point(3, 262)
+        Me.CheckBoxForceConvertTo11kHz.Location = New System.Drawing.Point(3, 210)
         Me.CheckBoxForceConvertTo11kHz.Name = "CheckBoxForceConvertTo11kHz"
-        Me.CheckBoxForceConvertTo11kHz.Size = New System.Drawing.Size(206, 17)
+        Me.CheckBoxForceConvertTo11kHz.Size = New System.Drawing.Size(263, 17)
         Me.CheckBoxForceConvertTo11kHz.TabIndex = 24
-        Me.CheckBoxForceConvertTo11kHz.Text = "Force convert to 11 kHz on load track"
+        Me.CheckBoxForceConvertTo11kHz.Text = "Force convert to 11 kHz sample rate on load track"
         Me.CheckBoxForceConvertTo11kHz.UseVisualStyleBackColor = True
+        '
+        'CheckBoxRememberLastWndState
+        '
+        Me.CheckBoxRememberLastWndState.AutoSize = True
+        Me.CheckBoxRememberLastWndState.Location = New System.Drawing.Point(3, 141)
+        Me.CheckBoxRememberLastWndState.Name = "CheckBoxRememberLastWndState"
+        Me.CheckBoxRememberLastWndState.Size = New System.Drawing.Size(142, 17)
+        Me.CheckBoxRememberLastWndState.TabIndex = 25
+        Me.CheckBoxRememberLastWndState.Text = "Remember window state"
+        Me.CheckBoxRememberLastWndState.UseVisualStyleBackColor = True
+        '
+        'CheckBoxAutoUpdateYTDL
+        '
+        Me.CheckBoxAutoUpdateYTDL.AutoSize = True
+        Me.CheckBoxAutoUpdateYTDL.Location = New System.Drawing.Point(3, 233)
+        Me.CheckBoxAutoUpdateYTDL.Name = "CheckBoxAutoUpdateYTDL"
+        Me.CheckBoxAutoUpdateYTDL.Size = New System.Drawing.Size(246, 17)
+        Me.CheckBoxAutoUpdateYTDL.TabIndex = 19
+        Me.CheckBoxAutoUpdateYTDL.Text = "Update youtube-dl automatically (every 3 days)"
+        Me.CheckBoxAutoUpdateYTDL.UseVisualStyleBackColor = True
+        '
+        'StartMinimizedCheckBox
+        '
+        Me.StartMinimizedCheckBox.AutoSize = True
+        Me.StartMinimizedCheckBox.Location = New System.Drawing.Point(3, 164)
+        Me.StartMinimizedCheckBox.Name = "StartMinimizedCheckBox"
+        Me.StartMinimizedCheckBox.Size = New System.Drawing.Size(96, 17)
+        Me.StartMinimizedCheckBox.TabIndex = 13
+        Me.StartMinimizedCheckBox.Text = "Start minimized"
+        Me.StartMinimizedCheckBox.UseVisualStyleBackColor = True
+        '
+        'CheckBoxAddPrefixToName
+        '
+        Me.CheckBoxAddPrefixToName.AutoSize = True
+        Me.CheckBoxAddPrefixToName.Location = New System.Drawing.Point(3, 256)
+        Me.CheckBoxAddPrefixToName.Name = "CheckBoxAddPrefixToName"
+        Me.CheckBoxAddPrefixToName.Size = New System.Drawing.Size(373, 17)
+        Me.CheckBoxAddPrefixToName.TabIndex = 26
+        Me.CheckBoxAddPrefixToName.Text = "Add directory name as prefix to imported track name (except from Internet)"
+        Me.CheckBoxAddPrefixToName.UseVisualStyleBackColor = True
+        '
+        'CheckBoxNoImportIfYTDLInterrupt
+        '
+        Me.CheckBoxNoImportIfYTDLInterrupt.AutoSize = True
+        Me.CheckBoxNoImportIfYTDLInterrupt.Location = New System.Drawing.Point(3, 279)
+        Me.CheckBoxNoImportIfYTDLInterrupt.Name = "CheckBoxNoImportIfYTDLInterrupt"
+        Me.CheckBoxNoImportIfYTDLInterrupt.Size = New System.Drawing.Size(364, 17)
+        Me.CheckBoxNoImportIfYTDLInterrupt.TabIndex = 27
+        Me.CheckBoxNoImportIfYTDLInterrupt.Text = "Do not import tracks if youtube-dl was interrupted by Ctrl-C or termination"
+        Me.CheckBoxNoImportIfYTDLInterrupt.UseVisualStyleBackColor = True
+        '
+        'ButtonResetSettings
+        '
+        Me.ButtonResetSettings.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.ButtonResetSettings.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(238, Byte))
+        Me.ButtonResetSettings.Location = New System.Drawing.Point(6, 450)
+        Me.ButtonResetSettings.Name = "ButtonResetSettings"
+        Me.ButtonResetSettings.Size = New System.Drawing.Size(341, 23)
+        Me.ButtonResetSettings.TabIndex = 8
+        Me.ButtonResetSettings.Text = "Reset all settings"
+        Me.ButtonResetSettings.UseVisualStyleBackColor = True
+        '
+        'CheckBoxHighlightRecentImportedTracks
+        '
+        Me.CheckBoxHighlightRecentImportedTracks.AutoSize = True
+        Me.CheckBoxHighlightRecentImportedTracks.Location = New System.Drawing.Point(6, 0)
+        Me.CheckBoxHighlightRecentImportedTracks.Name = "CheckBoxHighlightRecentImportedTracks"
+        Me.CheckBoxHighlightRecentImportedTracks.Size = New System.Drawing.Size(182, 17)
+        Me.CheckBoxHighlightRecentImportedTracks.TabIndex = 20
+        Me.CheckBoxHighlightRecentImportedTracks.Text = "Highlight recently imported tracks"
+        Me.CheckBoxHighlightRecentImportedTracks.UseVisualStyleBackColor = True
+        '
+        'ButtonChangeHighlightBackColor
+        '
+        Me.ButtonChangeHighlightBackColor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.ButtonChangeHighlightBackColor.Location = New System.Drawing.Point(6, 23)
+        Me.ButtonChangeHighlightBackColor.Name = "ButtonChangeHighlightBackColor"
+        Me.ButtonChangeHighlightBackColor.Size = New System.Drawing.Size(150, 23)
+        Me.ButtonChangeHighlightBackColor.TabIndex = 25
+        Me.ButtonChangeHighlightBackColor.Text = "Background color..."
+        Me.ButtonChangeHighlightBackColor.UseVisualStyleBackColor = True
         '
         'TabControl
         '
@@ -398,7 +436,7 @@ Partial Class SettingsForm
         Me.TabControl.Margin = New System.Windows.Forms.Padding(1)
         Me.TabControl.Name = "TabControl"
         Me.TabControl.SelectedIndex = 0
-        Me.TabControl.Size = New System.Drawing.Size(378, 417)
+        Me.TabControl.Size = New System.Drawing.Size(364, 511)
         Me.TabControl.TabIndex = 7
         '
         'TabPageHotKeys
@@ -411,14 +449,15 @@ Partial Class SettingsForm
         Me.TabPageHotKeys.Location = New System.Drawing.Point(4, 22)
         Me.TabPageHotKeys.Name = "TabPageHotKeys"
         Me.TabPageHotKeys.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPageHotKeys.Size = New System.Drawing.Size(370, 391)
+        Me.TabPageHotKeys.Size = New System.Drawing.Size(356, 485)
         Me.TabPageHotKeys.TabIndex = 2
         Me.TabPageHotKeys.Text = "Keys"
         '
         'Label3
         '
+        Me.Label3.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Label3.AutoSize = True
-        Me.Label3.Location = New System.Drawing.Point(245, 11)
+        Me.Label3.Location = New System.Drawing.Point(233, 11)
         Me.Label3.Name = "Label3"
         Me.Label3.Size = New System.Drawing.Size(117, 13)
         Me.Label3.TabIndex = 3
@@ -467,10 +506,11 @@ Partial Class SettingsForm
         ListViewItem6.StateImageIndex = 0
         ListViewItem7.Group = ListViewGroup1
         ListViewItem7.StateImageIndex = 0
-        Me.ListViewHotkeys.Items.AddRange(New System.Windows.Forms.ListViewItem() {ListViewItem1, ListViewItem2, ListViewItem3, ListViewItem4, ListViewItem5, ListViewItem6, ListViewItem7})
+        ListViewItem8.Group = ListViewGroup1
+        Me.ListViewHotkeys.Items.AddRange(New System.Windows.Forms.ListViewItem() {ListViewItem1, ListViewItem2, ListViewItem3, ListViewItem4, ListViewItem5, ListViewItem6, ListViewItem7, ListViewItem8})
         Me.ListViewHotkeys.Location = New System.Drawing.Point(6, 35)
         Me.ListViewHotkeys.Name = "ListViewHotkeys"
-        Me.ListViewHotkeys.Size = New System.Drawing.Size(358, 350)
+        Me.ListViewHotkeys.Size = New System.Drawing.Size(344, 444)
         Me.ListViewHotkeys.TabIndex = 0
         Me.ListViewHotkeys.UseCompatibleStateImageBehavior = False
         Me.ListViewHotkeys.View = System.Windows.Forms.View.Details
@@ -488,6 +528,8 @@ Partial Class SettingsForm
         'TabPageOther
         '
         Me.TabPageOther.BackColor = System.Drawing.SystemColors.Control
+        Me.TabPageOther.Controls.Add(Me.ButtonResetSettings)
+        Me.TabPageOther.Controls.Add(Me.GroupBoxHighlight)
         Me.TabPageOther.Controls.Add(Me.GroupBox1)
         Me.TabPageOther.Controls.Add(Me.OverrideGroup)
         Me.TabPageOther.Controls.Add(Me.GroupBoxModule)
@@ -495,9 +537,33 @@ Partial Class SettingsForm
         Me.TabPageOther.Location = New System.Drawing.Point(4, 22)
         Me.TabPageOther.Name = "TabPageOther"
         Me.TabPageOther.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPageOther.Size = New System.Drawing.Size(370, 391)
+        Me.TabPageOther.Size = New System.Drawing.Size(356, 485)
         Me.TabPageOther.TabIndex = 1
         Me.TabPageOther.Text = "Misc"
+        '
+        'GroupBoxHighlight
+        '
+        Me.GroupBoxHighlight.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.GroupBoxHighlight.Controls.Add(Me.ButtonChangeHighlightForeColor)
+        Me.GroupBoxHighlight.Controls.Add(Me.CheckBoxHighlightRecentImportedTracks)
+        Me.GroupBoxHighlight.Controls.Add(Me.ButtonChangeHighlightBackColor)
+        Me.GroupBoxHighlight.Location = New System.Drawing.Point(6, 209)
+        Me.GroupBoxHighlight.Name = "GroupBoxHighlight"
+        Me.GroupBoxHighlight.Size = New System.Drawing.Size(341, 57)
+        Me.GroupBoxHighlight.TabIndex = 8
+        Me.GroupBoxHighlight.TabStop = False
+        '
+        'ButtonChangeHighlightForeColor
+        '
+        Me.ButtonChangeHighlightForeColor.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.ButtonChangeHighlightForeColor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.ButtonChangeHighlightForeColor.Location = New System.Drawing.Point(194, 23)
+        Me.ButtonChangeHighlightForeColor.Name = "ButtonChangeHighlightForeColor"
+        Me.ButtonChangeHighlightForeColor.Size = New System.Drawing.Size(141, 23)
+        Me.ButtonChangeHighlightForeColor.TabIndex = 26
+        Me.ButtonChangeHighlightForeColor.Text = "Foreground color..."
+        Me.ButtonChangeHighlightForeColor.UseVisualStyleBackColor = True
         '
         'GroupBox1
         '
@@ -508,7 +574,7 @@ Partial Class SettingsForm
         Me.GroupBox1.Controls.Add(Me.RadioButtonNoPlaylistAsk)
         Me.GroupBox1.Location = New System.Drawing.Point(6, 160)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(358, 43)
+        Me.GroupBox1.Size = New System.Drawing.Size(341, 43)
         Me.GroupBox1.TabIndex = 7
         Me.GroupBox1.TabStop = False
         Me.GroupBox1.Text = "Drag && drop URLs - no playlist:"
@@ -550,7 +616,7 @@ Partial Class SettingsForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(378, 417)
+        Me.ClientSize = New System.Drawing.Size(364, 511)
         Me.Controls.Add(Me.TabControl)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -571,6 +637,8 @@ Partial Class SettingsForm
         Me.TabPageHotKeys.ResumeLayout(False)
         Me.TabPageHotKeys.PerformLayout()
         Me.TabPageOther.ResumeLayout(False)
+        Me.GroupBoxHighlight.ResumeLayout(False)
+        Me.GroupBoxHighlight.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
         Me.ResumeLayout(False)
@@ -588,11 +656,6 @@ Partial Class SettingsForm
     Friend WithEvents FFMPEGRadio As RadioButton
     Friend WithEvents GroupBoxModule As GroupBox
     Friend WithEvents GroupBox2 As GroupBox
-    Friend WithEvents StartMinimizedCheckBox As CheckBox
-    Friend WithEvents MinimizeToSysTrayCheckBox As CheckBox
-    Friend WithEvents HoldToPlay As CheckBox
-    Friend WithEvents StartEnabledCheckBox As CheckBox
-    Friend WithEvents LogCheckBox As CheckBox
     Friend WithEvents HintCheckBox As CheckBox
     Friend WithEvents TableLayoutPanel3 As TableLayoutPanel
     Friend WithEvents TabControl As TabControl
@@ -603,16 +666,26 @@ Partial Class SettingsForm
     Friend WithEvents ColumnHeader2 As ColumnHeader
     Friend WithEvents ButtonResetKey As Button
     Friend WithEvents ButtonClearKey As Button
-    Friend WithEvents CheckBoxAutoUpdateYTDL As CheckBox
     Friend WithEvents CheckBoxHighlightRecentImportedTracks As CheckBox
-    Friend WithEvents ConTagsCheckBox As CheckBox
     Friend WithEvents GroupBox1 As GroupBox
     Friend WithEvents RadioButtonNoPlaylistNo As RadioButton
     Friend WithEvents RadioButtonNoPlaylistYes As RadioButton
     Friend WithEvents RadioButtonNoPlaylistAsk As RadioButton
     Friend WithEvents ButtonResetSettings As Button
     Friend WithEvents Label3 As Label
-    Friend WithEvents CheckBoxForceConvertTo11kHz As CheckBox
-    Friend WithEvents ButtonChangeHighlightColor As Button
+    Friend WithEvents ButtonChangeHighlightBackColor As Button
+    Friend WithEvents GroupBoxHighlight As GroupBox
+    Friend WithEvents ButtonChangeHighlightForeColor As Button
+    Friend WithEvents LogCheckBox As CheckBox
+    Friend WithEvents StartEnabledCheckBox As CheckBox
+    Friend WithEvents StartMinimizedCheckBox As CheckBox
+    Friend WithEvents MinimizeToSysTrayCheckBox As CheckBox
+    Friend WithEvents HoldToPlay As CheckBox
+    Friend WithEvents ConTagsCheckBox As CheckBox
+    Friend WithEvents CheckBoxAutoUpdateYTDL As CheckBox
     Friend WithEvents CheckBoxStopWorkingIfGameClosed As CheckBox
+    Friend WithEvents CheckBoxForceConvertTo11kHz As CheckBox
+    Friend WithEvents CheckBoxRememberLastWndState As CheckBox
+    Friend WithEvents CheckBoxAddPrefixToName As CheckBox
+    Friend WithEvents CheckBoxNoImportIfYTDLInterrupt As CheckBox
 End Class

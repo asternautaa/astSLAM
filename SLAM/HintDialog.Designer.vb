@@ -45,7 +45,7 @@ Partial Class HintDialog
         Me.TableLayoutPanel1.RowCount = 2
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 84.73684!))
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 15.26316!))
-        Me.TableLayoutPanel1.Size = New System.Drawing.Size(541, 190)
+        Me.TableLayoutPanel1.Size = New System.Drawing.Size(541, 244)
         Me.TableLayoutPanel1.TabIndex = 0
         '
         'Panel1
@@ -55,17 +55,17 @@ Partial Class HintDialog
         Me.Panel1.Controls.Add(Me.ButtonOK)
         Me.Panel1.Cursor = System.Windows.Forms.Cursors.Arrow
         Me.Panel1.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.Panel1.Location = New System.Drawing.Point(0, 160)
+        Me.Panel1.Location = New System.Drawing.Point(0, 206)
         Me.Panel1.Margin = New System.Windows.Forms.Padding(0)
         Me.Panel1.Name = "Panel1"
-        Me.Panel1.Size = New System.Drawing.Size(541, 30)
+        Me.Panel1.Size = New System.Drawing.Size(541, 38)
         Me.Panel1.TabIndex = 0
         '
         'CheckBoxDontShowAgain
         '
         Me.CheckBoxDontShowAgain.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.CheckBoxDontShowAgain.AutoSize = True
-        Me.CheckBoxDontShowAgain.Location = New System.Drawing.Point(3, 8)
+        Me.CheckBoxDontShowAgain.Location = New System.Drawing.Point(3, 16)
         Me.CheckBoxDontShowAgain.Name = "CheckBoxDontShowAgain"
         Me.CheckBoxDontShowAgain.Size = New System.Drawing.Size(179, 17)
         Me.CheckBoxDontShowAgain.TabIndex = 1
@@ -75,7 +75,7 @@ Partial Class HintDialog
         'ButtonOK
         '
         Me.ButtonOK.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.ButtonOK.Location = New System.Drawing.Point(463, 4)
+        Me.ButtonOK.Location = New System.Drawing.Point(463, 12)
         Me.ButtonOK.Name = "ButtonOK"
         Me.ButtonOK.Size = New System.Drawing.Size(75, 23)
         Me.ButtonOK.TabIndex = 0
@@ -87,7 +87,7 @@ Partial Class HintDialog
         Me.LabelMsg.Dock = System.Windows.Forms.DockStyle.Fill
         Me.LabelMsg.Location = New System.Drawing.Point(3, 0)
         Me.LabelMsg.Name = "LabelMsg"
-        Me.LabelMsg.Size = New System.Drawing.Size(535, 160)
+        Me.LabelMsg.Size = New System.Drawing.Size(535, 206)
         Me.LabelMsg.TabIndex = 1
         Me.LabelMsg.Text = resources.GetString("LabelMsg.Text")
         Me.LabelMsg.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
@@ -97,7 +97,7 @@ Partial Class HintDialog
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.White
-        Me.ClientSize = New System.Drawing.Size(541, 190)
+        Me.ClientSize = New System.Drawing.Size(541, 244)
         Me.Controls.Add(Me.TableLayoutPanel1)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle
         Me.MaximizeBox = False

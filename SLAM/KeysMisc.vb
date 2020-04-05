@@ -22,6 +22,7 @@
         NextTrack
         FirstTrack
         LastTrack
+        ShowSLAM
     End Enum
 
 End Class

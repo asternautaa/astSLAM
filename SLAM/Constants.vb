@@ -42,7 +42,10 @@
         "slast",
         "srndm",
         "slam_stop",
-        "slam_quit"
+        "slam_quit",
+        "slam_show",
+        "slam_11khz_on",
+        "slam_11khz_off"
     }
 
     Public ReadOnly HelpInGame() As String =
@@ -59,8 +62,10 @@
            "'slam_first', 'sfirst' - Load first track.",
            "'slam_last', 'slast' - Load last track.",
            "'slam_random', 'srndm' - Load random track.",
-           "'slam_stop' - Stop work.",
-           "'slam_quit' - Stop work and quit SLAM."
+           "'slam_stop' - Stops working.",
+           "'slam_quit' - Stops working and quits SLAM.",
+           "'slam_show' - Shows SLAM interface.",
+           "'slam_11khz_on', 'slam_11khz_off' - Enable/disable 11 kHz sample rate mode."
        }
 
     Public ReadOnly HelpShortcuts() As String =

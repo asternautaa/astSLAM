@@ -22,6 +22,9 @@
         CheckBoxHighlightRecentImportedTracks.Checked = My.Settings.HighlightRecentImportedTracks
         CheckBoxStopWorkingIfGameClosed.Checked = My.Settings.StopWorkingIfGameClosed
         CheckBoxForceConvertTo11kHz.Checked = My.Settings.ForceConvertTo11kHz
+        CheckBoxRememberLastWndState.Checked = My.Settings.RememberLastWndPos
+        CheckBoxAddPrefixToName.Checked = My.Settings.AddPrefixToName
+        CheckBoxNoImportIfYTDLInterrupt.Checked = My.Settings.NoImportYTDLInterrupted
 
         Select Case My.Settings.DragAndDropNoPlaylist
             Case DragAndDropNoPlaylist.Ask
@@ -36,10 +39,18 @@
         steamappstext.Text = My.Settings.steamapps
 
         For i As Integer = 0 To My.Settings.Hotkeys.Count - 1
-            ListViewHotkeys.Items(i).SubItems(1).Text = My.Settings.Hotkeys(i)
+            Try
+                ListViewHotkeys.Items(i).SubItems(1).Text = My.Settings.Hotkeys(i)
+            Catch
+            End Try
         Next
 
-        ButtonChangeHighlightColor.BackColor = My.Settings.HighlightBackColor
+        ButtonChangeHighlightBackColor.BackColor = My.Settings.HighlightBackColor
+        ButtonChangeHighlightForeColor.BackColor = My.Settings.HighlightBackColor
+
+        ButtonChangeHighlightBackColor.ForeColor = My.Settings.HighlightForeColor
+        ButtonChangeHighlightForeColor.ForeColor = My.Settings.HighlightForeColor
+
     End Sub
 
     'Private Sub UpdateCheckBox_CheckedChanged(sender As Object, e As EventArgs)
@@ -196,14 +207,42 @@
         My.Settings.ForceConvertTo11kHz = CheckBoxForceConvertTo11kHz.Checked
         My.Settings.Save()
     End Sub
-    Private Sub ButtonChangeHighlightColor_Click(sender As Object, e As EventArgs) Handles ButtonChangeHighlightColor.Click
+    Private Sub ButtonChangeHighlightColor_Click(sender As Object, e As EventArgs) Handles ButtonChangeHighlightBackColor.Click
         Dim ColorDlg As New ColorDialog
         ColorDlg.Color = My.Settings.HighlightBackColor
         ColorDlg.FullOpen = True
         If ColorDlg.ShowDialog() = DialogResult.OK Then
-            ButtonChangeHighlightColor.BackColor = ColorDlg.Color
+            ButtonChangeHighlightBackColor.BackColor = ColorDlg.Color
+            ButtonChangeHighlightForeColor.BackColor = ColorDlg.Color
             My.Settings.HighlightBackColor = ColorDlg.Color
             My.Settings.Save()
         End If
+    End Sub
+
+    Private Sub ButtonChangeHighlightForeColor_Click(sender As Object, e As EventArgs) Handles ButtonChangeHighlightForeColor.Click
+        Dim ColorDlg As New ColorDialog
+        ColorDlg.Color = My.Settings.HighlightBackColor
+        ColorDlg.FullOpen = True
+        If ColorDlg.ShowDialog() = DialogResult.OK Then
+            ButtonChangeHighlightBackColor.ForeColor = ColorDlg.Color
+            ButtonChangeHighlightForeColor.ForeColor = ColorDlg.Color
+            My.Settings.HighlightForeColor = ColorDlg.Color
+            My.Settings.Save()
+        End If
+    End Sub
+
+    Private Sub CheckBoxRememberLastWndState_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBoxRememberLastWndState.CheckedChanged
+        My.Settings.RememberLastWndPos = CheckBoxRememberLastWndState.Checked
+        My.Settings.Save()
+    End Sub
+
+    Private Sub CheckBoxAddPrefixToName_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBoxAddPrefixToName.CheckedChanged
+        My.Settings.AddPrefixToName = CheckBoxAddPrefixToName.Checked
+        My.Settings.Save()
+    End Sub
+
+    Private Sub CheckBoxNoImportIfYTDLInterrupt_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBoxNoImportIfYTDLInterrupt.CheckedChanged
+        My.Settings.NoImportYTDLInterrupted = CheckBoxNoImportIfYTDLInterrupt.Checked
+        My.Settings.Save()
     End Sub
 End Class

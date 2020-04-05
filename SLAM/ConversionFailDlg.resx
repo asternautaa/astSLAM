@@ -117,20 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="LabelMsg.Text" xml:space="preserve">
-    <value>Don't forget to type "exec slam" in console!
-
-Most servers (except CS:GO) doesn't allow to play tracks in voice chat system, because
-they have "sv_allow_voice_from_file 0" and also "sv_use_steam_voice 1".
-
-Playing track is also not possible if server uses Steam voice codec ("sv_voicecodec steam"),
- even if have "sv_use_steam_voice 0"
-
-By default SLAM imported track sample rate is 22 kHz (except GMod, L4D, L4D2; default is 11 kHz)
-If server have codec set to Speex ("sv_voicecodec vaudio_speex"), songs may playing slowly.
-You can fix this with "Force convert to 11 kHz on load track" option.
-
-You may need refresh track configs in game when you changed track hotkey or import new tracks
-while SLAM is working. You can do it by "exec slam" or "exec slam_tracklist" command in game.</value>
-  </data>
 </root>

@@ -44,7 +44,7 @@ Class Configs
             For i As Integer = 0 To Game.tracks.Count() - 1
                 slam_all_tracks_cfg.WriteLine("alias {0} ""bind {1} trx{0}; slam_updatecfg; echo [SLAM] Loaded: {2}""", i + 1, My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey), Game.tracks(i).name)
                 If (KeysMisc.CheckKeyIsFreeInSettings(Game.tracks(i).hotkey)) Then
-                    slam_all_tracks_cfg.WriteLine("bind {0} ""bind {1} trx{2}; slam_updatecfg; echo Loaded: {3}""", Game.tracks(i).hotkey, My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey), i + 1, Game.tracks(i).name)
+                    slam_all_tracks_cfg.WriteLine("bind {0} ""bind {1} key{0}; slam_updatecfg; echo [SLAM] Loaded: {3}""", Game.tracks(i).hotkey, My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey), i + 1, Game.tracks(i).name)
                 End If
             Next
             slam_all_tracks_cfg.WriteLine("")
@@ -104,7 +104,7 @@ Class Configs
             slam_cfg.WriteLine("alias la slam_listtracks")
             slam_cfg.WriteLine("alias slist slam_listtracks")
             slam_cfg.WriteLine("alias slam_play slam_play_on")
-            slam_cfg.WriteLine("alias slam_play_on ""alias slam_play slam_play_off; voice_inputfromfile 1; voice_loopback 1; +voicerecord;""")
+            slam_cfg.WriteLine("alias slam_play_on ""alias slam_play slam_play_off; voice_inputfromfile 1; voice_loopback 1; +voicerecord; bind {0} slplaying; slam_updatecfg;""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey))
             slam_cfg.WriteLine("alias slam_play_off ""alias slam_play slam_play_on; -voicerecord; voice_inputfromfile 0; voice_loopback 0;""")
             slam_cfg.WriteLine("alias slam_stop ""bind {0} slstop; slam_updatecfg;""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey))
             slam_cfg.WriteLine("alias slam_quit ""bind {0} slquit; slam_updatecfg;""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey))
@@ -132,6 +132,7 @@ Class Configs
             slam_cfg.WriteLine("alias snext ""slam_next""")
             slam_cfg.WriteLine("alias sfirst ""slam_first""")
             slam_cfg.WriteLine("alias slast ""slam_last""")
+
             slam_cfg.WriteLine("")
 
             If Not KeysMisc.KeyIsEmpty(KeysMisc.KeysIndex.PrevTrack) Then
@@ -154,6 +155,13 @@ Class Configs
                 slam_cfg.WriteLine("bind {0} slam_random", My.Settings.Hotkeys(KeysMisc.KeysIndex.RandomTrack))
             End If
 
+            If Not KeysMisc.KeyIsEmpty(KeysMisc.KeysIndex.ShowSLAM) Then
+                slam_cfg.WriteLine("bind {0} slam_show", My.Settings.Hotkeys(KeysMisc.KeysIndex.ShowSLAM))
+            End If
+
+            slam_cfg.WriteLine("alias slam_show ""bind {0} slshow; slam_updatecfg;""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey))
+            slam_cfg.WriteLine("alias slam_11khz_on ""bind {0} sl11on; slam_updatecfg;""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey))
+            slam_cfg.WriteLine("alias slam_11khz_off ""bind {0} sl11off; slam_updatecfg;""", My.Settings.Hotkeys(KeysMisc.KeysIndex.RelayKey))
             slam_cfg.WriteLine("voice_enable 1; voice_modenable 1; voice_forcemicrecord 0; con_enable 1{0}", If(Game.VoiceFadeOut, "; voice_fadeouttime 0.0", ""))
             slam_cfg.WriteLine("echo ""[SLAM] Initialised""")
         End Using

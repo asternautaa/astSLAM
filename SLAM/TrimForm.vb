@@ -5,8 +5,10 @@ Imports System.IO
 
 Public Class TrimForm
     Public WavFile As String
-    Public startpos As Integer
-    Public endpos As Integer
+    Public Startpos As Integer
+    Public Endpos As Integer
+    Private outputPlayer As New WaveOutEvent
+    Private WaveFloatToPlay
 
     Private Sub TrimForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         If Not String.IsNullOrEmpty(WavFile) Then
@@ -23,21 +25,32 @@ Public Class TrimForm
             NumericLeft.Maximum = Decimal.MaxValue
             NumericLeft.Increment = AdvWaveViewer1.SamplesPerPixel
 
-            If startpos = endpos And endpos = 0 Then
+            If Startpos = Endpos And Endpos = 0 Then
                 NumericRight.Value = AdvWaveViewer1.MaxSamples
             Else
-                AdvWaveViewer1.rightpos = endpos
-                AdvWaveViewer1.leftpos = startpos
+                AdvWaveViewer1.rightpos = Endpos
+                AdvWaveViewer1.leftpos = Startpos
                 NumericRight.Value = AdvWaveViewer1.rightSample
                 NumericLeft.Value = AdvWaveViewer1.leftSample
             End If
-
         End If
     End Sub
 
+    Public ReadOnly Property TrimPermanently
+        Get
+            Return CheckBoxTrimPermanently.Checked
+        End Get
+    End Property
+
     Private Sub TrimForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
-        If BackgroundPlayer.IsBusy Then
-            BackgroundPlayer.CancelAsync()
+        StopIfPlaying()
+        AdvWaveViewer1.WaveStream.Close()
+        outputPlayer.Dispose()
+    End Sub
+
+    Private Sub StopIfPlaying()
+        If (outputPlayer.PlaybackState = PlaybackState.Playing) Then
+            outputPlayer.Stop()
         End If
     End Sub
 
@@ -60,19 +73,28 @@ Public Class TrimForm
         End If
         AdvWaveViewer1.rightSample = NumericRight.Value
         NumericRightS.Value = NumericRight.Value / AdvWaveViewer1.SampleRate
+
     End Sub
 
     Private Sub DoneButton_Click(sender As Object, e As EventArgs) Handles DoneButton.Click
-        startpos = AdvWaveViewer1.leftpos
-
-        If AdvWaveViewer1.rightSample = AdvWaveViewer1.MaxSamples And AdvWaveViewer1.leftpos = 0 Then
-            endpos = 0
-        Else
-            endpos = AdvWaveViewer1.rightpos
+        Dim ContinueOp As Boolean = True
+        If (TrimPermanently) Then
+            If (MessageBox.Show("Trim permanently?" & vbCrLf & "This cannot be undone!", "Trim", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) = DialogResult.No) Then
+                ContinueOp = False
+            End If
         End If
 
+        If (ContinueOp) Then
+            Startpos = AdvWaveViewer1.leftpos
 
-        DialogResult = Windows.Forms.DialogResult.OK
+            If AdvWaveViewer1.rightSample = AdvWaveViewer1.MaxSamples And AdvWaveViewer1.leftpos = 0 Then
+                Endpos = 0
+            Else
+                Endpos = AdvWaveViewer1.rightpos
+            End If
+
+            DialogResult = Windows.Forms.DialogResult.OK
+        End If
     End Sub
 
     Private Sub TrimForm_Resize(sender As Object, e As EventArgs) Handles Me.Resize
@@ -96,63 +118,72 @@ Public Class TrimForm
             NumericRight.Value = NumericRight.Maximum
             NumericRightS.Value = NumericRight.Value / AdvWaveViewer1.SampleRate
         End If
-
     End Sub
 
     Private Sub PlayButton_Click(sender As Object, e As EventArgs) Handles PlayButton.Click
-        If BackgroundPlayer.IsBusy = False Then
-            BackgroundPlayer.RunWorkerAsync(New Object(2) {AdvWaveViewer1.WaveStream, AdvWaveViewer1.leftpos, AdvWaveViewer1.rightpos})
-            PlayButton.Text = "Stop"
-            DisableInterface()
-            PlayButton.Enabled = True
-        Else
-            BackgroundPlayer.CancelAsync()
-            PlayButton.Text = "Play"
+        StopIfPlaying()
+
+        Dim bytes((AdvWaveViewer1.rightpos - AdvWaveViewer1.leftpos)) As Byte
+
+        AdvWaveViewer1.WaveStream.Position = AdvWaveViewer1.leftpos
+        AdvWaveViewer1.WaveStream.Read(bytes, 0, (AdvWaveViewer1.rightpos - AdvWaveViewer1.leftpos))
+
+        WaveFloatToPlay = New RawSourceWaveStream(New MemoryStream(bytes), AdvWaveViewer1.WaveStream.WaveFormat)
+
+        outputPlayer.Init(WaveFloatToPlay)
+        outputPlayer.Play()
+        TimerPlayerState.Start()
+        EnableGUI(False)
+    End Sub
+
+    Private Sub TimerPlayerState_Tick(sender As Object, e As EventArgs) Handles TimerPlayerState.Tick
+        Dim CurrentPos = (outputPlayer.GetPosition() / (WaveFloatToPlay.WaveFormat.BitsPerSample / 8))
+        AdvWaveViewer1.marker = CurrentPos
+        TextBoxPlayback.Text = AdvWaveViewer1.leftSample + CurrentPos
+        TextBoxPlaybackS.Text = Math.Round((AdvWaveViewer1.leftSample + CurrentPos) / AdvWaveViewer1.SampleRate, 3)
+
+        If outputPlayer.PlaybackState = PlaybackState.Stopped Then
+            StopButton_Click(Nothing, Nothing)
         End If
     End Sub
 
-    Private Sub BackgroundPlayer_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundPlayer.DoWork
-        Dim WaveFloat As WaveStream = e.Argument(0)
-        Dim LeftPos As Integer = e.Argument(1)
-        Dim RightPos As Integer = e.Argument(2)
-
-        Dim bytes((RightPos - LeftPos)) As Byte
-
-        WaveFloat.Position = LeftPos
-        WaveFloat.Read(bytes, 0, (RightPos - LeftPos))
-
-        WaveFloat = New RawSourceWaveStream(New MemoryStream(bytes), WaveFloat.WaveFormat)
-        'WaveFloat.PadWithZeroes = False
-
-        Using output = New WaveOutEvent()
-            output.Init(WaveFloat)
-            output.Play()
-            While output.PlaybackState = PlaybackState.Playing And Not BackgroundPlayer.CancellationPending
-                Thread.Sleep(45)
-                BackgroundPlayer.ReportProgress(output.GetPosition() / (WaveFloat.WaveFormat.BitsPerSample / 8))
-            End While
-        End Using
+    Private Sub StopButton_Click(sender As Object, e As EventArgs) Handles StopButton.Click
+        outputPlayer.Stop()
+        TimerPlayerState.Stop()
+        EnableGUI()
     End Sub
 
-    Private Sub BackgroundPlayer_ProgressChanged(sender As Object, e As System.ComponentModel.ProgressChangedEventArgs) Handles BackgroundPlayer.ProgressChanged
-        AdvWaveViewer1.marker = e.ProgressPercentage
+    Private Sub EnableGUI(Optional enable As Boolean = True)
+        EnableGroupBoxes(enable)
+        AdvWaveViewer1.Enabled = enable
+        ResetButton.Enabled = enable
     End Sub
 
-    Private Sub BackgroundPlayer_RunWorkerCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundPlayer.RunWorkerCompleted
-        PlayButton.Text = "Play"
+    Private Sub EnableGroupBoxes(Optional enable As Boolean = True)
+        GroupBox1.Enabled = enable
+        GroupBox2.Enabled = enable
+        GroupBox3.Enabled = enable
+    End Sub
+
+    Private Sub StopResetPosButton_Click(sender As Object, e As EventArgs) Handles StopResetPosButton.Click
+        StopButton_Click(sender, e)
         AdvWaveViewer1.marker = 0
-        EnableInterface()
+        TextBoxPlayback.Text = NumericLeft.Value
+        TextBoxPlaybackS.Text = Math.Round(NumericLeftS.Value, 3)
     End Sub
 
-    Private Sub EnableInterface()
-        For Each Control In Me.Controls
-            Control.Enabled = True
-        Next
+    Private Sub ButtonMarkLeft_Click(sender As Object, e As EventArgs) Handles ButtonMarkLeft.Click
+        NumericLeft.Value = AdvWaveViewer1.leftSample + AdvWaveViewer1.marker
+        AdvWaveViewer1.marker = 0
     End Sub
 
-    Private Sub DisableInterface()
-        For Each Control In Me.Controls
-            Control.Enabled = False
-        Next
+    Private Sub ButtonMarkRight_Click(sender As Object, e As EventArgs) Handles ButtonMarkRight.Click
+        NumericRight.Value = AdvWaveViewer1.leftSample + AdvWaveViewer1.marker
+        AdvWaveViewer1.marker = 0
+    End Sub
+
+    Private Sub TrackBarVolume_Scroll(sender As Object, e As EventArgs) Handles TrackBarVolume.Scroll
+        outputPlayer.Volume = TrackBarVolume.Value / 100
+        GroupBoxVolume.Text = String.Format("Playback volume ({0})", TrackBarVolume.Value)
     End Sub
 End Class

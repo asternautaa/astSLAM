@@ -54,5 +54,6 @@
                 Return endpos > 0
             End Get
         End Property
+        Public PlayCounter As ULong = 0
     End Class
 End Class

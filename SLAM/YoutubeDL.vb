@@ -25,10 +25,30 @@ Class YoutubeDL
     Public Shared FormatWorstVideo As String = "worstvideo"
 
     Private Shared LastEx As Exception = Nothing
+    Private Shared DoWait As Boolean = True
 
     Public Shared ReadOnly Property LastException As Exception
         Get
             Return LastEx
+        End Get
+    End Property
+
+    Public Shared Property Wait As Boolean
+        Get
+            Return DoWait
+        End Get
+        Set(value As Boolean)
+            DoWait = value
+        End Set
+    End Property
+
+    'Public Shared Function ReadLine() As String
+    '    Return YTDLProcess.StandardOutput.ReadLine()
+    'End Function
+
+    Public Shared ReadOnly Property ExitCode
+        Get
+            Return YTDLProcess.ExitCode
         End Get
     End Property
 
@@ -103,30 +123,32 @@ Class YoutubeDL
         Return result
     End Function
 
-    Public Shared Function DownloadVideo(ByVal url As String, ByVal format As String, ByVal outputFilename As String, Optional ByVal noPlaylist As Boolean = True, Optional ByVal showConsole As Boolean = True) As Boolean
-        Dim result As Boolean = True
-        YTDLProcess.StartInfo.Arguments = ArgIgnoreErrors & " " & ArgFormat & " " & format & " " & ArgOutput & " " & outputFilename _
-            & " " & If(noPlaylist, ArgNoPlaylist, "") & " """ & url & """"
+    'Public Shared Function DownloadVideo(ByVal url As String, ByVal format As String, ByVal outputFilename As String, Optional ByVal noPlaylist As Boolean = True, Optional ByVal showConsole As Boolean = True) As Boolean
+    '    Dim result As Boolean = True
+    '    YTDLProcess.StartInfo.Arguments = ArgIgnoreErrors & " " & ArgFormat & " " & format & " " & ArgOutput & " " & outputFilename _
+    '        & " " & If(noPlaylist, ArgNoPlaylist, "") & " """ & url & """"
 
-        If (showConsole) Then
-            YTDLProcess.StartInfo.CreateNoWindow = False
-            YTDLProcess.StartInfo.RedirectStandardOutput = False
-        End If
+    '    If (showConsole) Then
+    '        YTDLProcess.StartInfo.CreateNoWindow = False
+    '        YTDLProcess.StartInfo.RedirectStandardOutput = False
+    '    End If
 
-        Try
-            YTDLProcess.Start()
-            YTDLProcess.WaitForExit()
-        Catch ex As Exception
-            LastEx = ex
-            result = False
-        End Try
+    '    Try
+    '        YTDLProcess.Start()
+    '        If (Wait) Then
+    '            YTDLProcess.WaitForExit()
+    '        End If
+    '    Catch ex As Exception
+    '        LastEx = ex
+    '        result = False
+    '    End Try
 
-        If (showConsole) Then
-            YTDLProcess.StartInfo.CreateNoWindow = True
-            YTDLProcess.StartInfo.RedirectStandardOutput = True
-        End If
-        Return result
-    End Function
+    '    If (showConsole) Then
+    '        YTDLProcess.StartInfo.CreateNoWindow = True
+    '        YTDLProcess.StartInfo.RedirectStandardOutput = True
+    '    End If
+    '    Return result
+    'End Function
 
     Public Shared Function DownloadVideos(ByVal urls As String(), ByVal format As String, ByVal outputFilename As String, Optional ByVal noPlaylist As Boolean = True, Optional ByVal showConsole As Boolean = True) As Boolean
         Dim result As Boolean = True
@@ -140,7 +162,9 @@ Class YoutubeDL
 
         Try
             YTDLProcess.Start()
-            YTDLProcess.WaitForExit()
+            If (Wait) Then
+                YTDLProcess.WaitForExit()
+            End If
         Catch ex As Exception
             LastEx = ex
             result = False
@@ -150,6 +174,22 @@ Class YoutubeDL
             YTDLProcess.StartInfo.CreateNoWindow = True
             YTDLProcess.StartInfo.RedirectStandardOutput = True
         End If
+        Return result
+    End Function
+
+    Public Shared Function DoUpdate()
+        Dim result As Boolean = True
+        YTDLProcess.StartInfo.Arguments = ArgUpdate
+        Try
+            YTDLProcess.Start()
+            If (Wait) Then
+                YTDLProcess.WaitForExit()
+            End If
+        Catch ex As Exception
+            LastEx = ex
+            result = False
+        End Try
+
         Return result
     End Function
 End Class

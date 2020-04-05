@@ -109,6 +109,12 @@
     </Compile>
     <Compile Include="Configs.vb" />
     <Compile Include="Constants.vb" />
+    <Compile Include="ConversionFailDlg.Designer.vb">
+      <DependentUpon>ConversionFailDlg.vb</DependentUpon>
+    </Compile>
+    <Compile Include="ConversionFailDlg.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="HintDialog.Designer.vb">
       <DependentUpon>HintDialog.vb</DependentUpon>
     </Compile>
@@ -181,6 +187,9 @@
   <ItemGroup>
     <EmbeddedResource Include="AboutBox.resx">
       <DependentUpon>AboutBox.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ConversionFailDlg.resx">
+      <DependentUpon>ConversionFailDlg.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="HintDialog.resx">
       <DependentUpon>HintDialog.vb</DependentUpon>
